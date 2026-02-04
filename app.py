@@ -189,7 +189,7 @@ def render_floating_scroll_top():
       btn.style.bottom = bottomPx + "px";
       btn.style.opacity = "1";
     } catch(e) {
-      btn.style.bottom = "180px";
+      btn.style.bottom = "18px";
       btn.style.opacity = "1";
     }
   };
