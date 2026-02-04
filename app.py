@@ -1242,10 +1242,6 @@ for idx, q in enumerate(st.session_state.quiz):
     if prev is not None and prev in q["choices"]:
         default_index = q["choices"].index(prev)
 
-        # (선택) key 자체가 없을 때만 세션에도 박아주면 더 안전
-        if widget_key not in st.session_state:
-            st.session_state[widget_key] = prev
-
     choice = st.radio(
         label="보기",
         options=q["choices"],
