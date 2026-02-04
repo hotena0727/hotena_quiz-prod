@@ -1368,6 +1368,21 @@ def render_my_dashboard():
         st.progress(min(max(pct / 100.0, 0.0), 1.0))
         st.caption(f"정답률 {pct:.0f}%")
         st.write("")
+st.markdown(
+    """
+    <div style="margin-top:32px; opacity:0.75;">
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+if st.button("로그아웃", use_container_width=True, key="btn_logout_bottom"):
+    try:
+        sb.auth.sign_out()
+    except Exception:
+        pass
+    clear_auth_everywhere()
+    st.rerun()
 
 # ============================================================
 # ✅ 상단 헤더 (페이지/버튼)
