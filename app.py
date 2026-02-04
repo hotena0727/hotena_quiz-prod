@@ -1519,7 +1519,7 @@ if "quiz" not in st.session_state:
 
 st.markdown("""
 <style>
-.quiztype-h { margin: 0 0 8px 0 !important; } /* 여기 숫자가 '출제유형-버튼 간격' */
+.quiztype-h { margin: 0 0 3px 0 !important; } /* 여기 숫자가 '출제유형-버튼 간격' */
 </style>
 """, unsafe_allow_html=True)
 
