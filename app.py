@@ -982,12 +982,12 @@ def render_my_dashboard():
 .weak-wrap{
   display:flex;
   flex-direction:column;
-  gap:20px;
+  gap:16px;
   margin-top:10px;
 }
 .weak-card{
   border: 1px solid rgba(120,120,120,0.20);
-  border-radius: 16px;
+  border-radius: 20px;
   padding: 12px 14px;
   background: rgba(255,255,255,0.02);
 }
