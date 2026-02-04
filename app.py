@@ -4,6 +4,7 @@ import pandas as pd
 import streamlit as st
 from supabase import create_client
 from streamlit_cookies_manager import EncryptedCookieManager
+import streamlit.components.v1 as components
 
 # ============================================================
 # ✅ Streamlit 기본 설정 (최상단)
@@ -28,6 +29,21 @@ label[data-baseweb="radio"] * {
 """, unsafe_allow_html=True)
 
 st.title("い형용사 퀴즈")
+def scroll_to_top():
+    # Streamlit 앱 최상단으로 스크롤
+    components.html(
+        """
+        <script>
+        window.parent.scrollTo(0, 0);
+        </script>
+        """,
+        height=0,
+    )
+
+# ✅ 버튼 클릭 후 rerun되면, 이 플래그를 보고 최상단 스크롤 실행
+if st.session_state.get("_scroll_top_once"):
+    scroll_to_top()
+    st.session_state["_scroll_top_once"] = False
 
 # ============================================================
 # ✅ Cookies
@@ -1444,10 +1460,10 @@ if st.session_state.submitted:
     st.divider()
 
     if st.button(
-        "🔄 새 문제(랜덤 10문항)",
+        "✅ 다음 10문항 시작하기",
         type="primary",
         use_container_width=True,
-        key="btn_new_quiz_bottom",
+        key=""✅ 다음 10문항 시작하기",
     ):
         clear_question_widget_keys()
         new_quiz = build_quiz(st.session_state.quiz_type)
