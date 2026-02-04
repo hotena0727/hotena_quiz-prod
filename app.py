@@ -177,7 +177,7 @@ def render_floating_scroll_top():
 
   // ✅ 하단바 가림 보정
   const BASE = 18;     // 기본 여백
-  const EXTRA = 14;   // 선우님이 올리고/내리는 값(더 올리려면 160~220)
+  const EXTRA = 34;   // 선우님이 올리고/내리는 값(더 올리려면 160~220)
 
   const reposition = () => {
     try {
