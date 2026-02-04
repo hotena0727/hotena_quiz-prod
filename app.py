@@ -12,13 +12,29 @@ from collections import Counter
 # ============================================================
 st.set_page_config(page_title="JLPT Quiz", layout="centered")
 
-# ✅✅✅ [해결 3] Streamlit 하단 로고/푸터 숨기기 (가장 위에서)
-st.markdown("""
+# ✅✅✅ Streamlit 하단/상단 UI 숨기기 (Cloud 포함, 가장 위에서)
+st.markdown(
+    """
 <style>
+/* Cloud 하단 footer(로고/메뉴) 계열: 버전마다 testid가 달라서 전부 잡기 */
 footer {display:none !important;}
+[data-testid="stFooter"] {display:none !important;}
+[data-testid="stAppFooter"] {display:none !important;}
+[class*="viewerBadge_container"] {display:none !important;}   /* 우하단 뱃지 계열 */
+[class*="viewerBadge_link"] {display:none !important;}
+
+/* 우상단 메뉴/툴바 */
 #MainMenu {display:none !important;}
+[data-testid="stMainMenu"] {display:none !important;}
+[data-testid="stToolbar"] {display:none !important;}
+[data-testid="stStatusWidget"] {display:none !important;}
+
+/* 상단 여백(장식선) */
+[data-testid="stDecoration"] {display:none !important;}
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 st.markdown("""
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -156,44 +172,43 @@ def render_floating_scroll_top():
 
   btn.addEventListener("click", goTop);
 
-  // ✅ (핵심) 모바일 하단 탭바/주소창 때문에 가려지는 영역을 계산해서 bottom을 띄움
-  // BASE: "내가 원하는 기본 띄움" (숫자 키우면 더 위로 올라감)
-  const BASE = 24;      // 기본 여백
-  const EXTRA = 140;     // 여기 숫자로 올리고 내리면 됨 (추천 80~140)
+  // ✅ 버튼을 body가 아니라 stAppViewContainer에 붙이면 "가려짐"이 확 줄어듦
+  const mount = () => doc.querySelector('[data-testid="stAppViewContainer"]') || doc.body;
+
+  // ✅ 하단바 가림 보정
+  const BASE = 18;     // 기본 여백
+  const EXTRA = 140;   // 선우님이 올리고/내리는 값(더 올리려면 160~220)
 
   const reposition = () => {
     try {
       const vv = window.parent.visualViewport || window.visualViewport;
-
-      // layout viewport - visual viewport = 가려지는 영역(대부분 하단)
       const innerH = window.parent.innerHeight || window.innerHeight;
       const hiddenBottom = vv ? Math.max(0, innerH - vv.height - (vv.offsetTop || 0)) : 0;
 
-      // safe-area (아이폰 등)도 함께 반영
-      const safe = (() => {
-        // env()는 JS에서 직접 못 읽으니, 보수적으로 0 처리.
-        // (아이폰까지 확실히 하려면 CSS calc를 쓰는데, 지금은 안드로이드 이슈가 핵심이라 생략)
-        return 0;
-      })();
-
-      const bottomPx = BASE + EXTRA + hiddenBottom + safe;
-
+      const bottomPx = BASE + EXTRA + hiddenBottom;
       btn.style.bottom = bottomPx + "px";
       btn.style.opacity = "1";
     } catch(e) {
-      // 최후 fallback (px 꼭!)
-      btn.style.bottom = "140px";
+      btn.style.bottom = "180px";
       btn.style.opacity = "1";
     }
   };
 
-  doc.body.appendChild(btn);
+  // ✅ DOM 아직 준비 안 된 경우를 대비해서 "붙이기"를 재시도
+  const tryAttach = (n=0) => {
+    const root = mount();
+    if (!root) {
+      if (n < 30) return setTimeout(() => tryAttach(n+1), 50);
+      return;
+    }
+    root.appendChild(btn);
+    reposition();
+    setTimeout(reposition, 50);
+    setTimeout(reposition, 200);
+    setTimeout(reposition, 600);
+  };
 
-  // 첫 렌더 + 이후 변화 대응
-  reposition();
-  setTimeout(reposition, 50);
-  setTimeout(reposition, 200);
-  setTimeout(reposition, 600);
+  tryAttach();
 
   window.parent.addEventListener("resize", reposition, {passive:true});
   window.parent.addEventListener("scroll", reposition, {passive:true});
