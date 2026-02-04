@@ -17,20 +17,6 @@ st.markdown("""
 <link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&family=Noto+Sans+JP:wght@400;500;700;800&display=swap" rel="stylesheet">
 
 <style>
-/* 출제유형 버튼을 '작고 납작하게' + 줄바꿈 금지 */
-div.stButton > button {
-  padding: 6px 10px !important;
-  font-size: 13px !important;
-  line-height: 1.1 !important;
-  white-space: nowrap !important;  /* ✅ 1줄 고정 */
-}
-
-/* 칼럼 사이 간격을 살짝 줄여서 한 줄에 더 잘 들어가게 */
-div[data-testid="column"]{
-  padding-left: 4px !important;
-  padding-right: 4px !important;
-}
-
 :root{ --jp-rounded: "Noto Sans JP","Kosugi Maru","Hiragino Sans","Yu Gothic","Meiryo",sans-serif; }
 .jp, .jp *{ font-family: var(--jp-rounded) !important; line-height:1.7; letter-spacing:.2px; }
 
@@ -121,7 +107,7 @@ sb = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 # ============================================================
 # ✅ 상수/설정
 # ============================================================
-SHOW_POST_SUBMIT_UI = "Y"   # "Y"면 제출 후 상세(통계/기록/오답노트/누적현황) 표시
+SHOW_POST_SUBMIT_UI = "N"   # "Y"면 제출 후 상세(통계/기록/오답노트/누적현황) 표시
 SHOW_NAVER_TALK = "Y"    
 NAVER_TALK_URL = "https://talk.naver.com/W45141"
 APP_URL = "https://hotenaquiztestapp-5wiha4zfuvtnq4qgxdhq72.streamlit.app/"
@@ -429,33 +415,6 @@ def save_word_stats_via_rpc(sb_authed, quiz: list[dict], answers: list, quiz_typ
             },
         ).execute()
 
-def build_word_results_bulk_payload(
-    quiz: list[dict],
-    answers: list,
-    quiz_type: str,
-    level: str
-) -> list[dict]:
-    items = []
-    for idx, q in enumerate(quiz):
-        word_key = (str(q.get("jp_word", "")).strip() or str(q.get("reading", "")).strip())
-        if not word_key:
-            continue
-
-        picked = answers[idx] if idx < len(answers) else None
-        is_correct = (picked == q.get("correct_text"))
-
-        items.append(
-            {
-                "word_key": word_key,
-                "level": str(level),
-                "pos": str(q.get("pos", "") or ""),
-                "quiz_type": str(quiz_type),
-                "is_correct": bool(is_correct),
-            }
-        )
-
-    return items
-  
 # ============================================================
 # ✅ Progress (DB 저장/복원)
 # ============================================================
@@ -536,22 +495,6 @@ def is_admin() -> bool:
 
 def get_available_quiz_types() -> list[str]:
     return QUIZ_TYPES_ADMIN if is_admin() else QUIZ_TYPES_USER
-
-# ============================================================
-# ✅ (UI 제어) '오답 다시 풀기' 버튼 노출 조건
-# ============================================================
-def can_show_retry_wrongs_button() -> bool:
-    # 관리자는 항상 노출
-    if is_admin():
-        return True
-
-    # 제출 후에만 판단
-    if not st.session_state.get("submitted"):
-        return False
-
-    # 오답이 있어야만 노출
-    wl = st.session_state.get("wrong_list") or []
-    return len(wl) > 0
   
 # ============================================================
 # ✅ 로그인 UI
@@ -1298,15 +1241,18 @@ if "quiz" not in st.session_state:
 
 st.markdown("### 출제 유형")
 
-clicked = st.segmented_control(
-    label="",
-    options=available_types,
-    format_func=lambda x: ("✅ " + quiz_label_map.get(x, x)) if x == st.session_state.quiz_type else quiz_label_map.get(x, x),
-    default=st.session_state.quiz_type,
-    key="seg_qtype",
-)
+cols = st.columns(len(available_types))
+clicked = None
 
-# 선택 변경 시 퀴즈 재생성
+for i, t in enumerate(available_types):
+    label = quiz_label_map.get(t, t)
+    if t == st.session_state.quiz_type:
+        label = f"✅ {label}"
+
+    if cols[i].button(label, use_container_width=True, key=f"btn_qtype_{t}"):
+        clicked = t
+
+
 if clicked and clicked != st.session_state.quiz_type:
     clear_question_widget_keys()
     new_quiz = build_quiz(clicked)
@@ -1314,6 +1260,23 @@ if clicked and clicked != st.session_state.quiz_type:
     st.rerun()
 
 st.caption(f"현재 선택: **{quiz_label_map.get(st.session_state.quiz_type, st.session_state.quiz_type)}**")
+st.divider()
+
+col1, col2 = st.columns(2)
+
+with col1:
+    if st.button("🔄 새 문제(랜덤 10문항)", use_container_width=True, key="btn_new_quiz"):
+        clear_question_widget_keys()
+        new_quiz = build_quiz(st.session_state.quiz_type)
+        start_quiz_state(new_quiz, st.session_state.quiz_type, clear_wrongs=True)
+        st.rerun()
+
+with col2:
+    if st.button("🧹 선택 초기화", use_container_width=True, key="btn_reset_choice"):
+        clear_question_widget_keys()
+        start_quiz_state(st.session_state.quiz, st.session_state.quiz_type, clear_wrongs=False)
+        st.rerun()
+
 st.divider()
 
 if st.button("✅ 맞힌 단어 제외 초기화", use_container_width=True, key="btn_reset_mastered_current_type"):
@@ -1531,99 +1494,35 @@ if st.session_state.submitted:
     # ✅ 오답노트/누적현황/Top5/초기화/배너 — 전부 show_post_ui에서만
     if show_post_ui and st.session_state.wrong_list:
         st.subheader("❌ 오답 노트")
+        # (선우님 기존 오답노트 렌더링 블록 그대로 붙여넣기)
 
-        st.markdown(
-            """
-    <style>
-    .wrong-card{
-      border: 1px solid rgba(120,120,120,0.25);
-      border-radius: 16px;
-      padding: 14px 14px;
-      margin-bottom: 10px;
-      background: rgba(255,255,255,0.02);
-    }
-    .wrong-top{
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:12px;
-      margin-bottom: 8px;
-    }
-    .wrong-title{ font-weight: 900; font-size: 15px; margin-bottom: 4px; }
-    .wrong-sub{ opacity: 0.8; font-size: 12px; }
-    .tag{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      padding: 5px 9px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 700;
-      border: 1px solid rgba(120,120,120,0.25);
-      background: rgba(255,255,255,0.03);
-      white-space: nowrap;
-    }
-    .ans-row{
-      display:grid;
-      grid-template-columns: 72px 1fr;
-      gap:10px;
-      margin-top:6px;
-      font-size: 13px;
-    }
-    .ans-k{ opacity: 0.7; font-weight: 700; }
-    </style>
-    """,
-            unsafe_allow_html=True,
-        )
+    if show_post_ui:
+        st.divider()
+        st.subheader("📊 누적 학습 현황 (이번 세션)")
 
-        for w in st.session_state.wrong_list:
-            no = w.get("No", "")
-            qtext = w.get("문제", "")
-            picked = w.get("내 답", "")
-            correct = w.get("정답", "")
-            word = w.get("단어", "")
-            reading = w.get("읽기", "")
-            meaning = w.get("뜻", "")
-            mode = quiz_label_map.get(w.get("유형", ""), w.get("유형", ""))
+        total_attempts = sum(x["total"] for x in st.session_state.history) if st.session_state.history else 0
+        total_score = sum(x["score"] for x in st.session_state.history) if st.session_state.history else 0
+        acc = (total_score / total_attempts) if total_attempts else 0
 
-            st.markdown(
-                f"""
-    <div class="wrong-card">
-      <div class="wrong-top">
-        <div>
-          <div class="wrong-title">Q{no}. {word}</div>
-          <div class="wrong-sub">{qtext} · 유형: {mode}</div>
-        </div>
-        <div class="tag">오답</div>
-      </div>
-    
-      <div class="ans-row"><div class="ans-k">내 답</div><div>{picked}</div></div>
-      <div class="ans-row"><div class="ans-k">정답</div><div><b>{correct}</b></div></div>
-      <div class="ans-row"><div class="ans-k">읽기</div><div>{reading}</div></div>
-      <div class="ans-row"><div class="ans-k">뜻</div><div>{meaning}</div></div>
-    </div>
-    """,
-                unsafe_allow_html=True,
-            )
-    
-        # ✅✅✅ 오답노트 "다음"에 오답만 다시 풀기 버튼 배치
-        #    (일반 유저에게는 숨기려면 아래 if 조건을 조절)
-        if is_admin():  # ✅ 관리자에게만 보이게 (원하는 정책이면 이대로)
-            if st.button("❌ 틀린 문제만 다시 풀기", type="primary", use_container_width=True, key="btn_retry_wrongs_bottom"):
-              clear_question_widget_keys()
-              retry_quiz = build_quiz_from_wrongs(st.session_state.wrong_list, st.session_state.quiz_type)
-              start_quiz_state(retry_quiz, st.session_state.quiz_type, clear_wrongs=True)
-              st.session_state["_scroll_top_once"] = True
-              st.rerun()
-    
-                # (선택) 진행저장(progress)도 새 퀴즈로 덮어쓰기 원하면 저장 호출
-                # sb_authed_local2 = get_authed_sb()
-                # if sb_authed_local2 is not None:
-                #     save_progress_to_db(sb_authed_local2, user_id)
-    
-                st.session_state["_scroll_top_once"] = True
-                st.rerun()
-    
+        c1, c2, c3 = st.columns(3)
+        c1.metric("누적 회차", len(st.session_state.history))
+        c2.metric("누적 점수", f"{total_score} / {total_attempts}")
+        c3.metric("누적 정답률", f"{acc*100:.0f}%")
+
+        if st.session_state.wrong_counter:
+            st.markdown("#### ❌ 자주 틀리는 단어 TOP 5")
+            top5 = sorted(st.session_state.wrong_counter.items(), key=lambda x: x[1], reverse=True)[:5]
+            for rank, (w, cnt) in enumerate(top5, start=1):
+                total_seen = st.session_state.total_counter.get(w, 0)
+                st.write(f"{rank}. **{w}**  —  {cnt}회 오답 / {total_seen}회 출제")
+        else:
+            st.info("아직 오답 누적 데이터가 없습니다.")
+
+        if st.button("🗑️ 누적 기록 초기화", use_container_width=True, key="btn_reset_session_stats"):
+            st.session_state.history = []
+            st.session_state.wrong_counter = {}
+            st.session_state.total_counter = {}
+            st.rerun()
     # ============================================================
     # ✅ 하단: 새 문제 버튼(제출 버튼 느낌)
     # ============================================================
