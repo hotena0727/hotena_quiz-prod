@@ -1195,7 +1195,14 @@ def _safe_build_quiz_after_reset(qtype: str) -> list:
 # ============================================================
 # ✅ 세션 초기화
 # ============================================================
-available_types = get_available_quiz_types()
+QUIZ_TYPES_USER  = ["reading", "meaning"]
+QUIZ_TYPES_ADMIN = ["reading", "meaning", "kr2jp"]
+
+def get_available_quiz_types():
+    return QUIZ_TYPES_ADMIN if is_admin() else QUIZ_TYPES_USER
+
+def get_quiz_types():
+    return QUIZ_TYPES_ADMIN if is_admin() else QUIZ_TYPES_USER
 
 if "quiz_type" not in st.session_state or st.session_state.get("quiz_type") not in available_types:
     st.session_state.quiz_type = available_types[0]  # 보통 "reading"
