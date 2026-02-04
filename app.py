@@ -92,118 +92,60 @@ def scroll_to_top(nonce: int = 0):
 def render_floating_scroll_top():
     components.html(
         """
-<style>
-/* ✅ 모바일에서만 보이게(원하면 삭제) */
-@media (min-width: 801px) { .fab-top { display:none !important; } }
+        <style>
+        @media (min-width: 801px) { .fab-top { display:none !important; } }
 
-.fab-top{
-  position: fixed;
-  right: 14px;
-  bottom: 18px;
-  z-index: 999999;
-  width: 46px;
-  height: 46px;
-  border-radius: 999px;
-  border: 1px solid rgba(120,120,120,0.25);
-  background: rgba(0,0,0,0.55);
-  color: #fff;
-  font-size: 18px;
-  font-weight: 900;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 10px 22px rgba(0,0,0,0.25);
-  cursor: pointer;
-  user-select: none;
-}
-.fab-top:active { transform: scale(0.96); }
-</style>
+        .fab-top{
+          position: fixed;
+          right: 14px;
+          bottom: 18px;
+          z-index: 999999;
+          width: 46px;
+          height: 46px;
+          border-radius: 999px;
+          border: 1px solid rgba(120,120,120,0.25);
+          background: rgba(0,0,0,0.55);
+          color: #fff;
+          font-size: 18px;
+          font-weight: 900;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 10px 22px rgba(0,0,0,0.25);
+          cursor: pointer;
+          user-select: none;
+        }
+        .fab-top:active { transform: scale(0.96); }
+        </style>
 
-<button class="fab-top" onclick="(function(){
-  try {
-    const doc = window.parent.document;
-    const top = doc.getElementById('__TOP__');
-    if (top) top.scrollIntoView({behavior:'smooth', block:'start'});
+        <button class="fab-top" onclick="(function(){
+          try {
+            const doc = window.parent.document;
+            const top = doc.getElementById('__TOP__');
+            if (top) top.scrollIntoView({behavior:'smooth', block:'start'});
 
-    const targets = [
-      doc.querySelector('[data-testid="stAppViewContainer"]'),
-      doc.querySelector('[data-testid="stMain"]'),
-      doc.querySelector('section.main'),
-      doc.documentElement,
-      doc.body
-    ].filter(Boolean);
+            const targets = [
+              doc.querySelector('[data-testid="stAppViewContainer"]'),
+              doc.querySelector('[data-testid="stMain"]'),
+              doc.querySelector('section.main'),
+              doc.documentElement,
+              doc.body
+            ].filter(Boolean);
 
-    targets.forEach(t => {
-      if (t && typeof t.scrollTo === 'function') t.scrollTo({top:0, left:0, behavior:'smooth'});
-      if (t) t.scrollTop = 0;
-    });
+            targets.forEach(t => {
+              if (t && typeof t.scrollTo === 'function') t.scrollTo({top:0, left:0, behavior:'smooth'});
+              if (t) t.scrollTop = 0;
+            });
 
-    window.parent.scrollTo(0,0);
-    window.scrollTo(0,0);
-  } catch(e) {}
-})()">↑</button>
-""",
+            window.parent.scrollTo(0,0);
+            window.scrollTo(0,0);
+          } catch(e) {}
+        })()">↑</button>
+        """,
         height=0,
     )
 
-# ✅ 여기! 문자열 밖에서 호출해야 진짜 떠요.
 render_floating_scroll_top()
-    components.html(
-        """
-<style>
-render_floating_scroll_top()
-/* ✅ 모바일에서만 보이게(원하면 삭제) */
-@media (min-width: 801px) { .fab-top { display:none !important; } }
-
-.fab-top{
-  position: fixed;
-  right: 14px;
-  bottom: 18px;
-  z-index: 999999;
-  width: 46px;
-  height: 46px;
-  border-radius: 999px;
-  border: 1px solid rgba(120,120,120,0.25);
-  background: rgba(0,0,0,0.55);
-  color: #fff;
-  font-size: 18px;
-  font-weight: 900;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 10px 22px rgba(0,0,0,0.25);
-  cursor: pointer;
-  user-select: none;
-}
-.fab-top:active { transform: scale(0.96); }
-</style>
-
-<button class="fab-top" onclick="(function(){
-  try {
-    const doc = window.parent.document;
-    const top = doc.getElementById('__TOP__');
-    if (top) top.scrollIntoView({behavior:'smooth', block:'start'});
-
-    const targets = [
-      doc.querySelector('[data-testid="stAppViewContainer"]'),
-      doc.querySelector('[data-testid="stMain"]'),
-      doc.querySelector('section.main'),
-      doc.documentElement,
-      doc.body
-    ].filter(Boolean);
-
-    targets.forEach(t => {
-      if (t && typeof t.scrollTo === 'function') t.scrollTo({top:0, left:0, behavior:'smooth'});
-      if (t) t.scrollTop = 0;
-    });
-
-    window.parent.scrollTo(0,0);
-    window.scrollTo(0,0);
-  } catch(e) {}
-})()">↑</button>
-""",
-        height=0,
-    )
 
 # ✅ 버튼 클릭 후 rerun되면, 이 플래그를 보고 최상단 스크롤 실행
 if st.session_state.get("_scroll_top_once"):
