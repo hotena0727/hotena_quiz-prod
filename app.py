@@ -1375,32 +1375,30 @@ def render_my_dashboard():
 if "page" not in st.session_state:
     st.session_state.page = "quiz"
 
-st.markdown("""
-<style>
-.floating-logout{
-  position: fixed;
-  top: 10px;
-  right: 14px;
-  z-index: 99999;
-}
-.floating-logout button{
-  padding: 6px 10px !important;
-  font-size: 12px !important;
-  border-radius: 999px !important;
-}
-</style>
-""", unsafe_allow_html=True)
+colA, colB, colC, colD = st.columns([7, 3, 2, 3])
 
-# Streamlit 버튼을 div로 감싸기
-st.markdown('<div class="floating-logout">', unsafe_allow_html=True)
-if st.button("🚪", key="btn_logout_floating", help="로그아웃"):
-    try:
-        sb.auth.sign_out()
-    except Exception:
-        pass
-    clear_auth_everywhere()
-    st.rerun()
-st.markdown("</div>", unsafe_allow_html=True)
+with colA:
+    st.caption("환영합니다 🙂")
+
+with colB:
+    if st.button("📌 나의 기록", use_container_width=True, key="btn_go_my"):
+        st.session_state.page = "my"
+        st.rerun()
+
+with colC:
+    if is_admin():
+        if st.button("📊 관리자", use_container_width=True, key="btn_go_admin"):
+            st.session_state.page = "admin"
+            st.rerun()
+
+with colD:
+    if st.button("🚪 로그아웃", use_container_width=True, key="btn_logout"):
+        try:
+            sb.auth.sign_out()
+        except Exception:
+            pass
+        clear_auth_everywhere()
+        st.rerun()
 
 # ============================================================
 # ✅ 라우팅
