@@ -429,6 +429,33 @@ def save_word_stats_via_rpc(sb_authed, quiz: list[dict], answers: list, quiz_typ
             },
         ).execute()
 
+def build_word_results_bulk_payload(
+    quiz: list[dict],
+    answers: list,
+    quiz_type: str,
+    level: str
+) -> list[dict]:
+    items = []
+    for idx, q in enumerate(quiz):
+        word_key = (str(q.get("jp_word", "")).strip() or str(q.get("reading", "")).strip())
+        if not word_key:
+            continue
+
+        picked = answers[idx] if idx < len(answers) else None
+        is_correct = (picked == q.get("correct_text"))
+
+        items.append(
+            {
+                "word_key": word_key,
+                "level": str(level),
+                "pos": str(q.get("pos", "") or ""),
+                "quiz_type": str(quiz_type),
+                "is_correct": bool(is_correct),
+            }
+        )
+
+    return items
+  
 # ============================================================
 # ✅ Progress (DB 저장/복원)
 # ============================================================
