@@ -106,7 +106,7 @@ def render_floating_scroll_top():
   // 스타일 (PC/모바일 모두 표시)
   btn.style.position = "fixed";
   btn.style.right = "14px";
-  btn.style.bottom = "calc(32px + env(safe-area-inset-bottom))";
+  btn.style.bottom = "calc(100px + env(safe-area-inset-bottom))";
   btn.style.zIndex = "2147483647";
   btn.style.width = "46px";
   btn.style.height = "46px";
