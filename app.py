@@ -29,6 +29,7 @@ label[data-baseweb="radio"] * {
 """, unsafe_allow_html=True)
 
 st.title("い형용사 퀴즈")
+st.markdown('<div id="__TOP__"></div>', unsafe_allow_html=True)
 def scroll_to_top(key="scroll_top"):
     components.html(
         """
@@ -46,23 +47,19 @@ def scroll_to_top(key="scroll_top"):
 
           const go = () => {
             try {
-              // 1) TOP 앵커로 강제 이동
               const top = doc.getElementById("__TOP__");
               if (top) top.scrollIntoView({behavior: "auto", block: "start"});
 
-              // 2) 스크롤 컨테이너들도 같이 0으로
               targets.forEach(t => {
                 if (t && typeof t.scrollTo === "function") t.scrollTo({top: 0, left: 0, behavior: "auto"});
                 if (t) t.scrollTop = 0;
               });
 
-              // 3) window 스크롤도 같이
               window.parent.scrollTo(0, 0);
               window.scrollTo(0, 0);
             } catch(e) {}
           };
 
-          // requestAnimationFrame + timeout 섞어서 “렌더 후”도 잡기
           go();
           requestAnimationFrame(go);
           setTimeout(go, 50);
@@ -72,8 +69,8 @@ def scroll_to_top(key="scroll_top"):
         })();
         </script>
         """,
-        height=1,   // ✅ 0 말고 1 (마운트 보장)
-        key=key,    // ✅ key로 강제 리마운트 가능
+        height=1,  # 0이 아니라 1로 두면 iframe 마운트가 더 안정적입니다
+        key=key,
     )
 
 
