@@ -92,57 +92,70 @@ def scroll_to_top(nonce: int = 0):
 def render_floating_scroll_top():
     components.html(
         """
-        <style>
-        @media (min-width: 801px) { .fab-top { display:none !important; } }
+<script>
+(function(){
+  const doc = window.parent.document;
 
-        .fab-top{
-          position: fixed;
-          right: 14px;
-          bottom: 18px;
-          z-index: 999999;
-          width: 46px;
-          height: 46px;
-          border-radius: 999px;
-          border: 1px solid rgba(120,120,120,0.25);
-          background: rgba(0,0,0,0.55);
-          color: #fff;
-          font-size: 18px;
-          font-weight: 900;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 10px 22px rgba(0,0,0,0.25);
-          cursor: pointer;
-          user-select: none;
-        }
-        .fab-top:active { transform: scale(0.96); }
-        </style>
+  // 중복 방지
+  if (doc.getElementById("__FAB_TOP__")) return;
 
-        <button class="fab-top" onclick="(function(){
-          try {
-            const doc = window.parent.document;
-            const top = doc.getElementById('__TOP__');
-            if (top) top.scrollIntoView({behavior:'smooth', block:'start'});
+  const btn = doc.createElement("button");
+  btn.id = "__FAB_TOP__";
+  btn.textContent = "↑";
 
-            const targets = [
-              doc.querySelector('[data-testid="stAppViewContainer"]'),
-              doc.querySelector('[data-testid="stMain"]'),
-              doc.querySelector('section.main'),
-              doc.documentElement,
-              doc.body
-            ].filter(Boolean);
+  // 스타일 (PC/모바일 모두 표시)
+  btn.style.position = "fixed";
+  btn.style.right = "14px";
+  btn.style.bottom = "18px";
+  btn.style.zIndex = "2147483647";
+  btn.style.width = "46px";
+  btn.style.height = "46px";
+  btn.style.borderRadius = "999px";
+  btn.style.border = "1px solid rgba(120,120,120,0.25)";
+  btn.style.background = "rgba(0,0,0,0.55)";
+  btn.style.color = "#fff";
+  btn.style.fontSize = "18px";
+  btn.style.fontWeight = "900";
+  btn.style.boxShadow = "0 10px 22px rgba(0,0,0,0.25)";
+  btn.style.cursor = "pointer";
+  btn.style.userSelect = "none";
+  btn.style.display = "flex";
+  btn.style.alignItems = "center";
+  btn.style.justifyContent = "center";
 
-            targets.forEach(t => {
-              if (t && typeof t.scrollTo === 'function') t.scrollTo({top:0, left:0, behavior:'smooth'});
-              if (t) t.scrollTop = 0;
-            });
+  const goTop = () => {
+    try {
+      const top = doc.getElementById("__TOP__");
+      if (top) top.scrollIntoView({behavior:"smooth", block:"start"});
 
-            window.parent.scrollTo(0,0);
-            window.scrollTo(0,0);
-          } catch(e) {}
-        })()">↑</button>
+      const targets = [
+        doc.querySelector('[data-testid="stAppViewContainer"]'),
+        doc.querySelector('[data-testid="stMain"]'),
+        doc.querySelector('section.main'),
+        doc.documentElement,
+        doc.body
+      ].filter(Boolean);
+
+      targets.forEach(t => {
+        if (t && typeof t.scrollTo === "function") t.scrollTo({top:0, left:0, behavior:"smooth"});
+        if (t) t.scrollTop = 0;
+      });
+
+      window.parent.scrollTo(0,0);
+      window.scrollTo(0,0);
+    } catch(e) {}
+  };
+
+  btn.addEventListener("click", goTop);
+
+  doc.body.appendChild(btn);
+
+  // 첫 로드에서도 한 번 위치 보정(가끔 안 붙는 환경 대비)
+  setTimeout(() => { try { btn.style.opacity = "1"; } catch(e) {} }, 50);
+})();
+</script>
         """,
-        height=0,
+        height=1,
     )
 
 render_floating_scroll_top()
