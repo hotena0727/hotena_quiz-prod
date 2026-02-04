@@ -94,42 +94,45 @@ def render_floating_scroll_top():
 <script>
 (function(){
   const doc = window.parent.document;
+
+  // 중복 방지
   if (doc.getElementById("__FAB_TOP__")) return;
 
   const btn = doc.createElement("button");
   btn.id = "__FAB_TOP__";
-  btn.type = "button";
-  btn.setAttribute("aria-label", "맨 위로");
-  btn.innerHTML = `
-    <span style="
-      display:flex;align-items:center;justify-content:center;
-      width:100%;height:100%;
-      font-size:18px;line-height:1;
-    ">⌃</span>
-  `;
+  btn.textContent = "↑";
 
-  // ✅ 더 예쁜 스타일
+  // 기본 스타일
   btn.style.position = "fixed";
   btn.style.right = "14px";
   btn.style.zIndex = "2147483647";
   btn.style.width = "46px";
   btn.style.height = "46px";
   btn.style.borderRadius = "999px";
-  btn.style.border = "1px solid rgba(255,255,255,0.18)";
-  btn.style.background = "rgba(20,20,20,0.55)";
-  btn.style.backdropFilter = "blur(8px)";
-  btn.style.webkitBackdropFilter = "blur(8px)";
+  btn.style.border = "1px solid rgba(120,120,120,0.25)";
+  btn.style.background = "rgba(0,0,0,0.55)";
   btn.style.color = "#fff";
+  btn.style.fontSize = "18px";
   btn.style.fontWeight = "900";
-  btn.style.boxShadow = "0 10px 26px rgba(0,0,0,0.28)";
+  btn.style.boxShadow = "0 10px 22px rgba(0,0,0,0.25)";
   btn.style.cursor = "pointer";
   btn.style.userSelect = "none";
   btn.style.display = "flex";
   btn.style.alignItems = "center";
   btn.style.justifyContent = "center";
   btn.style.opacity = "0";
-  btn.style.transform = "translateY(6px)";
-  btn.style.transition = "opacity .18s ease, transform .18s ease";
+
+  // ✅ PC에서는 숨김 (801px 이상이면 display:none)
+  const applyDeviceVisibility = () => {
+    try {
+      const w = window.parent.innerWidth || window.innerWidth;
+      if (w >= 801) {
+        btn.style.display = "none";
+      } else {
+        btn.style.display = "flex";
+      }
+    } catch(e) {}
+  };
 
   const goTop = () => {
     try {
@@ -156,18 +159,10 @@ def render_floating_scroll_top():
 
   btn.addEventListener("click", goTop);
 
-  // 눌림 효과
-  btn.addEventListener("touchstart", () => { btn.style.transform = "scale(0.96)"; }, {passive:true});
-  btn.addEventListener("touchend",   () => { btn.style.transform = "scale(1)"; }, {passive:true});
-  btn.addEventListener("mousedown",  () => { btn.style.transform = "scale(0.96)"; });
-  btn.addEventListener("mouseup",    () => { btn.style.transform = "scale(1)"; });
-
-  // ✅ body 말고 stAppViewContainer에 붙임
   const mount = () => doc.querySelector('[data-testid="stAppViewContainer"]') || doc.body;
 
-  // ✅ 하단 가림 보정 (여기만 조절하면 됨)
   const BASE = 18;
-  const EXTRA = 34;   // ← “더 위로” 올리고 싶으면 140~200
+  const EXTRA = 34; // ← 가려지면 여기만 올리기
 
   const reposition = () => {
     try {
@@ -175,22 +170,19 @@ def render_floating_scroll_top():
       const innerH = window.parent.innerHeight || window.innerHeight;
       const hiddenBottom = vv ? Math.max(0, innerH - vv.height - (vv.offsetTop || 0)) : 0;
 
-      const bottomPx = BASE + EXTRA + hiddenBottom;
-      btn.style.bottom = bottomPx + "px";
-
+      btn.style.bottom = (BASE + EXTRA + hiddenBottom) + "px";
       btn.style.opacity = "1";
-      btn.style.transform = "translateY(0)";
     } catch(e) {
-      btn.style.bottom = "160px";
+      btn.style.bottom = "220px";
       btn.style.opacity = "1";
-      btn.style.transform = "translateY(0)";
     }
+    applyDeviceVisibility(); // ✅ 화면 크기 변하면 즉시 반영
   };
 
   const tryAttach = (n=0) => {
     const root = mount();
     if (!root) {
-      if (n < 40) return setTimeout(() => tryAttach(n+1), 50);
+      if (n < 30) return setTimeout(() => tryAttach(n+1), 50);
       return;
     }
     root.appendChild(btn);
@@ -202,7 +194,9 @@ def render_floating_scroll_top():
 
   tryAttach();
 
+  // ✅ 리사이즈/회전 대응
   window.parent.addEventListener("resize", reposition, {passive:true});
+
   const vv = window.parent.visualViewport || window.visualViewport;
   if (vv) {
     vv.addEventListener("resize", reposition, {passive:true});
