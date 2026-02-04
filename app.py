@@ -905,7 +905,63 @@ st.divider()
 # ============================================================
 # ✅ 관리자/내대시보드
 # ============================================================
+# ============================================================
+# ✅ 퀴즈 로직
+# ============================================================
+def make_question(row: pd.Series, qtype: str, base_pool_i: pd.DataFrame, distractor_pool_level: pd.DataFrame) -> dict:
+    jp = row.get("jp_word")
+    rd = row.get("reading")
+    mn = row.get("meaning")
 
+    display_word = jp if pd.notna(jp) and str(jp).strip() != "" else rd
+
+    if qtype == "reading":
+        prompt = f"{display_word}의 발음은?"
+        correct = row["reading"]
+        candidates = (
+            base_pool_i.loc[base_pool_i["reading"] != correct, "reading"]
+            .dropna().drop_duplicates().tolist()
+        )
+
+    elif qtype == "meaning":
+        prompt = f"{display_word}의 뜻은?"
+        correct = row["meaning"]
+        candidates = (
+            distractor_pool_level.loc[distractor_pool_level["meaning"] != correct, "meaning"]
+            .dropna().drop_duplicates().tolist()
+        )
+
+    elif qtype == "kr2jp":
+        prompt = f"'{mn}'의 일본어는?"
+        correct = str(row["jp_word"]).strip()
+        candidates = (
+            base_pool_i.loc[base_pool_i["jp_word"] != correct, "jp_word"]
+            .dropna().astype(str).str.strip()
+        )
+        candidates = [x for x in candidates.tolist() if x]
+        candidates = list(dict.fromkeys(candidates))
+
+    else:
+        raise ValueError("Unknown qtype")
+
+    if len(candidates) < 3:
+        st.error(f"오답 후보 부족: 유형={qtype}, 후보={len(candidates)}개")
+        st.stop()
+
+    wrongs = random.sample(candidates, 3)
+    choices = wrongs + [correct]
+    random.shuffle(choices)
+
+    return {
+        "prompt": prompt,
+        "choices": choices,
+        "correct_text": correct,
+        "jp_word": row["jp_word"],
+        "reading": row["reading"],
+        "meaning": row["meaning"],
+        "pos": row["pos"],
+        "qtype": qtype,
+    }
 def build_quiz_from_wrongs(wrong_list: list, qtype: str) -> list:
     ensure_pools_ready()   # ✅ 추가: my 페이지에서도 pool_i가 존재하게 보장
 
@@ -1350,64 +1406,6 @@ if st.session_state.page == "my":
     st.stop()
 
 ensure_pools_ready()
-
-# ============================================================
-# ✅ 퀴즈 로직
-# ============================================================
-def make_question(row: pd.Series, qtype: str, base_pool_i: pd.DataFrame, distractor_pool_level: pd.DataFrame) -> dict:
-    jp = row.get("jp_word")
-    rd = row.get("reading")
-    mn = row.get("meaning")
-
-    display_word = jp if pd.notna(jp) and str(jp).strip() != "" else rd
-
-    if qtype == "reading":
-        prompt = f"{display_word}의 발음은?"
-        correct = row["reading"]
-        candidates = (
-            base_pool_i.loc[base_pool_i["reading"] != correct, "reading"]
-            .dropna().drop_duplicates().tolist()
-        )
-
-    elif qtype == "meaning":
-        prompt = f"{display_word}의 뜻은?"
-        correct = row["meaning"]
-        candidates = (
-            distractor_pool_level.loc[distractor_pool_level["meaning"] != correct, "meaning"]
-            .dropna().drop_duplicates().tolist()
-        )
-
-    elif qtype == "kr2jp":
-        prompt = f"'{mn}'의 일본어는?"
-        correct = str(row["jp_word"]).strip()
-        candidates = (
-            base_pool_i.loc[base_pool_i["jp_word"] != correct, "jp_word"]
-            .dropna().astype(str).str.strip()
-        )
-        candidates = [x for x in candidates.tolist() if x]
-        candidates = list(dict.fromkeys(candidates))
-
-    else:
-        raise ValueError("Unknown qtype")
-
-    if len(candidates) < 3:
-        st.error(f"오답 후보 부족: 유형={qtype}, 후보={len(candidates)}개")
-        st.stop()
-
-    wrongs = random.sample(candidates, 3)
-    choices = wrongs + [correct]
-    random.shuffle(choices)
-
-    return {
-        "prompt": prompt,
-        "choices": choices,
-        "correct_text": correct,
-        "jp_word": row["jp_word"],
-        "reading": row["reading"],
-        "meaning": row["meaning"],
-        "pos": row["pos"],
-        "qtype": qtype,
-    }
   
 def build_quiz(qtype: str) -> list:
     ensure_pools_ready()  # ✅ 추가
