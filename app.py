@@ -1762,15 +1762,12 @@ if st.session_state.submitted:
 
         st.session_state.session_stats_applied_this_attempt = True
 
-# ✅ 오답노트/누적현황/Top5/초기화/배너 — 전부 show_post_ui에서만
-if st.session_state.submitted:
-    show_post_ui = (SHOW_POST_SUBMIT_UI == "Y") or is_admin()
+# ✅ 오답노트/다시풀기/다음10문항은 "항상" 노출 (submitted 후, 오답 있을 때)
+if st.session_state.submitted and st.session_state.wrong_list:
+    st.subheader("❌ 오답 노트")
 
-    if show_post_ui and st.session_state.wrong_list:
-        st.subheader("❌ 오답 노트")
-
-        st.markdown(
-            """
+    st.markdown(
+        """
 <style>
 .wrong-card{
   border: 1px solid rgba(120,120,120,0.25);
@@ -1810,25 +1807,25 @@ if st.session_state.submitted:
 .ans-k{ opacity: 0.7; font-weight: 700; }
 </style>
 """,
-            unsafe_allow_html=True,
-        )
+        unsafe_allow_html=True,
+    )
 
-        def _s(v):
-            return "" if v is None else str(v)
+    def _s(v):
+        return "" if v is None else str(v)
 
-        # ✅ 카드 렌더링 (오답마다 1장)
-        for w in st.session_state.wrong_list:
-            no = _s(w.get("No"))
-            qtext = _s(w.get("문제"))
-            picked = _s(w.get("내 답"))
-            correct = _s(w.get("정답"))
-            word = _s(w.get("단어"))
-            reading = _s(w.get("읽기"))
-            meaning = _s(w.get("뜻"))
-            mode = quiz_label_map.get(w.get("유형"), w.get("유형", ""))
+    # ✅ 카드 렌더링 (오답마다 1장)
+    for w in st.session_state.wrong_list:
+        no = _s(w.get("No"))
+        qtext = _s(w.get("문제"))
+        picked = _s(w.get("내 답"))
+        correct = _s(w.get("정답"))
+        word = _s(w.get("단어"))
+        reading = _s(w.get("읽기"))
+        meaning = _s(w.get("뜻"))
+        mode = quiz_label_map.get(w.get("유형"), w.get("유형", ""))
 
-            st.markdown(
-                f"""
+        st.markdown(
+            f"""
 <div class="wrong-card">
   <div class="wrong-top">
     <div>
@@ -1844,38 +1841,39 @@ if st.session_state.submitted:
   <div class="ans-row"><div class="ans-k">뜻</div><div>{meaning}</div></div>
 </div>
 """,
-                unsafe_allow_html=True,
-            )
+            unsafe_allow_html=True,
+        )
 
-        # ✅ 버튼은 "오답노트 전체" 아래에 1번만
-        if st.button(
-            "❌ 틀린 문제만 다시 풀기",
-            type="primary",
-            use_container_width=True,
-            key="btn_retry_wrongs_bottom",
-        ):
-            clear_question_widget_keys()
-            retry_quiz = build_quiz_from_wrongs(
-                st.session_state.wrong_list,
-                st.session_state.quiz_type,
-            )
-            start_quiz_state(retry_quiz, st.session_state.quiz_type, clear_wrongs=True)
-            st.session_state["_scroll_top_once"] = True
-            st.rerun()
+    # ✅ 버튼은 "오답노트 전체" 아래에 1번만 (항상 노출)
+    if st.button(
+        "❌ 틀린 문제만 다시 풀기",
+        type="primary",
+        use_container_width=True,
+        key="btn_retry_wrongs_bottom",
+    ):
+        clear_question_widget_keys()
+        retry_quiz = build_quiz_from_wrongs(
+            st.session_state.wrong_list,
+            st.session_state.quiz_type,
+        )
+        start_quiz_state(retry_quiz, st.session_state.quiz_type, clear_wrongs=True)
+        st.session_state["_scroll_top_once"] = True
+        st.rerun()
 
-        st.divider()
+    st.divider()
 
-        if st.button(
-            "✅ 다음 10문항 시작하기",
-            type="primary",
-            use_container_width=True,
-            key="btn_next_10",
-        ):
-            clear_question_widget_keys()
-            new_quiz = build_quiz(st.session_state.quiz_type)
-            start_quiz_state(new_quiz, st.session_state.quiz_type, clear_wrongs=True)
-            st.session_state["_scroll_top_once"] = True
-            st.rerun()
+    if st.button(
+        "✅ 다음 10문항 시작하기",
+        type="primary",
+        use_container_width=True,
+        key="btn_next_10",
+    ):
+        clear_question_widget_keys()
+        new_quiz = build_quiz(st.session_state.quiz_type)
+        start_quiz_state(new_quiz, st.session_state.quiz_type, clear_wrongs=True)
+        st.session_state["_scroll_top_once"] = True
+        st.rerun()
+
      
     show_naver_talk = (SHOW_NAVER_TALK == "N") or is_admin()
         
