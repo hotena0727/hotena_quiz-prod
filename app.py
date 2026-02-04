@@ -125,7 +125,7 @@ quiz_label_for_table = {
     "meaning": "뜻",
     "kr2jp": "한→일",
 }
-QUIZ_TYPES_USER = ["reading", "meaning"]                 # 일반 유저
+QUIZ_TYPES_USER = ["reading", "meaning", "kr2jp"]                 # 일반 유저 , 3종은 뒤에 "kr2jp" 추가
 QUIZ_TYPES_ADMIN = ["reading", "meaning", "kr2jp"]       # 관리자만 3종
 
 # ============================================================
