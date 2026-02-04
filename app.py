@@ -840,6 +840,7 @@ if not ok and (cookies.get("refresh_token") or cookies.get("access_token")):
     st.caption("세션 복원에 실패해서 로그인을 다시 요청합니다.")
 
 require_login()
+st.session_state.pop("is_admin_cached", None)
 
 user = st.session_state.user
 user_id = user.id
