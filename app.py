@@ -1322,8 +1322,8 @@ with cbtn2:
         start_quiz_state(new_quiz, st.session_state.quiz_type, clear_wrongs=True)
 
         st.success(f"초기화 완료 (유형: {quiz_label_map[st.session_state.quiz_type]})")
-        st.session_state["_scroll_top]()_
-
+        st.session_state["_scroll_top_once"] = True
+        st.rerun()
 # ============================================================
 # ✅ answers 길이 자동 맞춤
 # ============================================================
