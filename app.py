@@ -536,6 +536,22 @@ def is_admin() -> bool:
 
 def get_available_quiz_types() -> list[str]:
     return QUIZ_TYPES_ADMIN if is_admin() else QUIZ_TYPES_USER
+
+# ============================================================
+# ✅ (UI 제어) '오답 다시 풀기' 버튼 노출 조건
+# ============================================================
+def can_show_retry_wrongs_button() -> bool:
+    # 관리자는 항상 노출
+    if is_admin():
+        return True
+
+    # 제출 후에만 판단
+    if not st.session_state.get("submitted"):
+        return False
+
+    # 오답이 있어야만 노출
+    wl = st.session_state.get("wrong_list") or []
+    return len(wl) > 0
   
 # ============================================================
 # ✅ 로그인 UI
@@ -1516,6 +1532,28 @@ if st.session_state.submitted:
     if show_post_ui and st.session_state.wrong_list:
         st.subheader("❌ 오답 노트")
         # (선우님 기존 오답노트 렌더링 블록 그대로 붙여넣기)
+
+    # ============================================================
+    # ✅ 오답노트 다음: ❌ 틀린 문제만 다시 풀기 (조건부 노출)
+    # ============================================================
+    if can_show_retry_wrongs_button():
+        if st.button(
+            "❌ 틀린 문제만 다시 풀기",
+            type="secondary",
+            use_container_width=True,
+            key="btn_retry_wrongs_after_note",
+        ):
+            clear_question_widget_keys()
+
+            retry_quiz = build_quiz_from_wrongs(
+                wrong_list=st.session_state.wrong_list,
+                qtype=st.session_state.quiz_type,
+            )
+
+            start_quiz_state(retry_quiz, st.session_state.quiz_type, clear_wrongs=True)
+
+            st.session_state["_scroll_top_once"] = True
+            st.rerun()
 
     if show_post_ui:
         st.divider()
