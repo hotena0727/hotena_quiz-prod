@@ -1438,6 +1438,27 @@ if st.session_state.submitted:
             st.session_state.wrong_counter = {}
             st.session_state.total_counter = {}
             st.rerun()
+    # ============================================================
+    # ✅ 하단: 새 문제 버튼(제출 버튼 느낌)
+    # ============================================================
+    st.divider()
+
+    if st.button(
+        "🔄 새 문제(랜덤 10문항)",
+        type="primary",
+        use_container_width=True,
+        key="btn_new_quiz_bottom",
+    ):
+        clear_question_widget_keys()
+        new_quiz = build_quiz(st.session_state.quiz_type)
+        start_quiz_state(new_quiz, st.session_state.quiz_type, clear_wrongs=True)
+
+        # (선택) 진행중 저장(progress)도 같이 비우고 싶으면 아래 3줄 활성화
+        # sb_authed_local2 = get_authed_sb()
+        # if sb_authed_local2 is not None:
+        #     clear_progress_in_db(sb_authed_local2, user_id)
+
+        st.rerun()
         
     show_naver_talk = (SHOW_NAVER_TALK == "Y") or is_admin()
         
