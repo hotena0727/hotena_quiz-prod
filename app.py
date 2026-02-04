@@ -33,25 +33,37 @@ def scroll_to_top():
     components.html(
         """
         <script>
-        (function() {
-          // Streamlit은 rerun 직후 DOM이 늦게 잡히는 경우가 있어 약간 지연해서 여러 번 시도
+        (function () {
           const go = () => {
             try {
-              // 일반 스크롤
-              window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-              // 혹시 iframe 구조면 parent도 시도(가능한 경우만)
-              if (window.parent && window.parent !== window) {
-                window.parent.scrollTo({ top: 0, left: 0, behavior: "instant" });
+              // ✅ 1) Streamlit 본문 스크롤 컨테이너를 직접 잡는다
+              const doc = window.parent.document;
+
+              const main =
+                doc.querySelector("section.main") ||
+                doc.querySelector('[data-testid="stAppViewContainer"]') ||
+                doc.querySelector('[data-testid="stApp"]');
+
+              if (main) {
+                // ✅ 컨테이너가 스크롤을 가진 경우
+                main.scrollTo({ top: 0, left: 0, behavior: "auto" });
+                main.scrollTop = 0;
               }
-              // 문서 루트도 한번 더
-              document.documentElement.scrollTop = 0;
-              document.body.scrollTop = 0;
+
+              // ✅ 2) 혹시 window 스크롤인 경우도 같이 처리
+              window.parent.scrollTo(0, 0);
+              window.scrollTo(0, 0);
+
+              doc.documentElement.scrollTop = 0;
+              doc.body.scrollTop = 0;
             } catch (e) {}
           };
+
           go();
-          setTimeout(go, 60);
-          setTimeout(go, 180);
-          setTimeout(go, 420);
+          setTimeout(go, 80);
+          setTimeout(go, 200);
+          setTimeout(go, 450);
+          setTimeout(go, 900);
         })();
         </script>
         """,
