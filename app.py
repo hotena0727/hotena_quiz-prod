@@ -905,6 +905,33 @@ st.divider()
 # ============================================================
 # ✅ 관리자/내대시보드
 # ============================================================
+
+def build_quiz_from_wrongs(wrong_list: list, qtype: str) -> list:
+    ensure_pools_ready()   # ✅ 추가: my 페이지에서도 pool_i가 존재하게 보장
+
+    wrong_words = []
+    for w in (wrong_list or []):
+        key = str(w.get("단어", "")).strip()
+        if key:
+            wrong_words.append(key)
+
+    wrong_words = list(dict.fromkeys(wrong_words))
+
+    if not wrong_words:
+        st.warning("현재 오답 노트가 비어 있어요. 🙂")
+        return []
+
+    retry_df = pool_i[
+        (pool_i["jp_word"].isin(wrong_words)) | (pool_i["reading"].isin(wrong_words))
+    ].copy()
+
+    if len(retry_df) == 0:
+        st.error("오답 단어를 풀에서 찾지 못했습니다. (jp_word/reading 매칭 확인)")
+        st.stop()
+
+    retry_df = retry_df.sample(frac=1).reset_index(drop=True)
+    return [make_question(retry_df.iloc[i], qtype, pool_i, pool) for i in range(len(retry_df))]
+
 def render_admin_dashboard():
     st.subheader("📊 관리자 대시보드")
 
@@ -1381,33 +1408,7 @@ def make_question(row: pd.Series, qtype: str, base_pool_i: pd.DataFrame, distrac
         "pos": row["pos"],
         "qtype": qtype,
     }
-
-def build_quiz_from_wrongs(wrong_list: list, qtype: str) -> list:
-    ensure_pools_ready()   # ✅ 추가: my 페이지에서도 pool_i가 존재하게 보장
-
-    wrong_words = []
-    for w in (wrong_list or []):
-        key = str(w.get("단어", "")).strip()
-        if key:
-            wrong_words.append(key)
-
-    wrong_words = list(dict.fromkeys(wrong_words))
-
-    if not wrong_words:
-        st.warning("현재 오답 노트가 비어 있어요. 🙂")
-        return []
-
-    retry_df = pool_i[
-        (pool_i["jp_word"].isin(wrong_words)) | (pool_i["reading"].isin(wrong_words))
-    ].copy()
-
-    if len(retry_df) == 0:
-        st.error("오답 단어를 풀에서 찾지 못했습니다. (jp_word/reading 매칭 확인)")
-        st.stop()
-
-    retry_df = retry_df.sample(frac=1).reset_index(drop=True)
-    return [make_question(retry_df.iloc[i], qtype, pool_i, pool) for i in range(len(retry_df))]
-    
+  
 def build_quiz(qtype: str) -> list:
     ensure_pools_ready()  # ✅ 추가
     
