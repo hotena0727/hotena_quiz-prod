@@ -11,34 +11,6 @@ from collections import Counter
 # ✅ Streamlit 기본 설정 (최상단)
 # ============================================================
 st.set_page_config(page_title="JLPT Quiz", layout="centered")
-
-# ✅✅✅ Streamlit 하단/상단 UI 숨기기 (Cloud 포함, 가장 위에서)
-st.markdown(
-    """
-<style>
-/* Streamlit 내부 footer/하단 영역 */
-footer {display:none !important;}
-[data-testid="stFooter"] {display:none !important;}
-[data-testid="stAppFooter"] {display:none !important;}
-[data-testid="stBottom"] {display:none !important;}
-
-/* Cloud 뱃지/배너 계열(버전에 따라 클래스명이 바뀜) */
-[class*="viewerBadge"] {display:none !important;}
-[class*="streamlitBadge"] {display:none !important;}
-a[href*="streamlit.io"] {display:none !important;}
-a[href*="streamlitapp.com"] {display:none !important;}
-
-/* 우상단 메뉴/툴바 */
-#MainMenu {display:none !important;}
-[data-testid="stMainMenu"] {display:none !important;}
-[data-testid="stToolbar"] {display:none !important;}
-[data-testid="stStatusWidget"] {display:none !important;}
-[data-testid="stDecoration"] {display:none !important;}
-</style>
-""",
-    unsafe_allow_html=True,
-)
-
 st.markdown("""
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
