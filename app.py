@@ -116,7 +116,7 @@ def render_floating_scroll_top():
   btn.style.right = "14px";
 
   // ✅ 로고/하단바를 피해서 위로 올림 (원하는 만큼 숫자만 조절)
-  btn.style.bottom = "calc(18px + env(safe-area-inset-bottom) + 72px)";
+  btn.style.bottom = "calc(18px + env(safe-area-inset-bottom) + 110px)";
 
   btn.style.zIndex = "2147483647";
   btn.style.width = "46px";
