@@ -1517,13 +1517,7 @@ if "quiz" not in st.session_state:
 # ✅ 상단 UI (출제유형/새문제/초기화)
 # ============================================================
 
-st.markdown("""
-<style>
-.quiztype-h { margin: 0 0 3px 0 !important; } /* 여기 숫자가 '출제유형-버튼 간격' */
-</style>
-""", unsafe_allow_html=True)
-
-st.markdown('<h3 class="quiztype-h">출제 유형</h3>', unsafe_allow_html=True)
+st.markdown("### 출제 유형")
 
 clicked = st.segmented_control(
     label="",
