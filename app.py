@@ -1512,12 +1512,12 @@ if st.session_state.submitted:
 
         st.session_state.session_stats_applied_this_attempt = True
 
-    # ✅ 오답노트/누적현황/Top5/초기화/배너 — 전부 show_post_ui에서만
-    if show_post_ui and st.session_state.wrong_list:
-          st.subheader("❌ 오답 노트")
+# ✅ 오답노트/누적현황/Top5/초기화/배너 — 전부 show_post_ui에서만
+if show_post_ui and st.session_state.wrong_list:
+    st.subheader("❌ 오답 노트")
 
-          st.markdown(
-              """
+    st.markdown(
+        """
 <style>
 .wrong-card{
   border: 1px solid rgba(120,120,120,0.25);
@@ -1557,21 +1557,21 @@ if st.session_state.submitted:
 .ans-k{ opacity: 0.7; font-weight: 700; }
 </style>
 """,
-            unsafe_allow_html=True,
-          )
+        unsafe_allow_html=True,
+    )
 
-          for w in st.session_state.wrong_list:
-              no = w.get("No", "")
-              qtext = w.get("문제", "")
-              picked = w.get("내 답", "")
-              correct = w.get("정답", "")
-              word = w.get("단어", "")
-              reading = w.get("읽기", "")
-              meaning = w.get("뜻", "")
-              mode = quiz_label_map.get(w.get("유형", ""), w.get("유형", ""))
+    for w in st.session_state.wrong_list:
+        no = w.get("No", "")
+        qtext = w.get("문제", "")
+        picked = w.get("내 답", "")
+        correct = w.get("정답", "")
+        word = w.get("단어", "")
+        reading = w.get("읽기", "")
+        meaning = w.get("뜻", "")
+        mode = quiz_label_map.get(w.get("유형", ""), w.get("유형", ""))
 
-              st.markdown(
-                  f"""
+        st.markdown(
+            f"""
 <div class="wrong-card">
   <div class="wrong-top">
     <div>
@@ -1587,26 +1587,27 @@ if st.session_state.submitted:
   <div class="ans-row"><div class="ans-k">뜻</div><div>{meaning}</div></div>
 </div>
 """,
-                unsafe_allow_html=True,
-            )
+            unsafe_allow_html=True,
+        )
 
-         # ✅✅✅ 오답노트 "다음"에 오답만 다시 풀기 버튼 배치
-         # 일반 유저에게 숨기고 싶으면 is_admin() 유지 / 보이게 하고 싶으면 조건 제거
-        if is_admin():
-             if st.button(
-                 "❌ 틀린 문제만 다시 풀기",
-                 type="primary",
-                 use_container_width=True,
-                 key="btn_retry_wrongs_bottom",
-             ):
-                 clear_question_widget_keys()
-                 retry_quiz = build_quiz_from_wrongs(
-                     st.session_state.wrong_list,
-                     st.session_state.quiz_type,
-                 )
-                 start_quiz_state(retry_quiz, st.session_state.quiz_type, clear_wrongs=True)
-                 st.session_state["_scroll_top_once"] = True
-                 st.rerun()
+    # ✅✅✅ 오답노트 아래 "오답만 다시 풀기" 버튼
+    # 일반 유저에게 숨기고 싶으면 is_admin() 유지 / 보이게 하고 싶으면 조건 제거
+    if is_admin():
+        if st.button(
+            "❌ 틀린 문제만 다시 풀기",
+            type="primary",
+            use_container_width=True,
+            key="btn_retry_wrongs_bottom",
+        ):
+            clear_question_widget_keys()
+            retry_quiz = build_quiz_from_wrongs(
+                st.session_state.wrong_list,
+                st.session_state.quiz_type,
+            )
+            start_quiz_state(retry_quiz, st.session_state.quiz_type, clear_wrongs=True)
+            st.session_state["_scroll_top_once"] = True
+            st.rerun()
+
     # ============================================================
     # ✅ 하단: 새 문제 버튼(제출 버튼 느낌)
     # ============================================================
