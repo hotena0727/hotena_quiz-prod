@@ -1242,7 +1242,16 @@ if "quiz" not in st.session_state:
 # ============================================================
 # ✅ 상단 UI (출제유형/새문제/초기화)
 # ============================================================
-available_types = get_available_quiz_types()
+QUIZ_TYPES_USER  = ["reading", "meaning"]                 # 일반 유저: 2개
+QUIZ_TYPES_ADMIN = ["reading", "meaning", "kr2jp"]        # 관리자: 3개(원하면)
+
+def get_available_quiz_types() -> list[str]:
+    # is_admin()이 아직 준비 안 된 시점이면 기본값으로 안전하게
+    try:
+        return QUIZ_TYPES_ADMIN if is_admin() else QUIZ_TYPES_USER
+    except Exception:
+        return QUIZ_TYPES_USER
+        available_types = get_available_quiz_types()
 
 st.markdown("### 출제 유형")
 
