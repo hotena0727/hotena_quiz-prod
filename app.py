@@ -1517,7 +1517,7 @@ if "quiz" not in st.session_state:
 # ✅ 상단 UI (출제유형/새문제/초기화)
 # ============================================================
 
-st.markdown("### 출제 유형")
+st.markdown("#### 출제 유형")
 
 clicked = st.segmented_control(
     label="",
