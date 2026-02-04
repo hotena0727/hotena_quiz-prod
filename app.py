@@ -1531,11 +1531,21 @@ if st.session_state.submitted:
     # ✅ 오답노트/누적현황/Top5/초기화/배너 — 전부 show_post_ui에서만
     if show_post_ui and st.session_state.wrong_list:
         st.subheader("❌ 오답 노트")
-        # (선우님 기존 오답노트 렌더링 블록 그대로 붙여넣기)
+    # ✅ (기존 카드형식 렌더링 - 그대로 유지)
+    for w in st.session_state.wrong_list:
+        st.markdown(
+            f"""
+            <div class="record-card">
+              <div><b>No.{w['No']}</b> {w['단어']}</div>
+              <div style="opacity:.8;">{w['문제']}</div>
+              <div>내 답: {w['내 답']}</div>
+              <div>정답: {w['정답']}</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
-    # ============================================================
-    # ✅ 오답노트 다음: ❌ 틀린 문제만 다시 풀기 (조건부 노출)
-    # ============================================================
+    # ✅ (추가) 카드 렌더링이 끝난 다음에 버튼
     if can_show_retry_wrongs_button():
         if st.button(
             "❌ 틀린 문제만 다시 풀기",
@@ -1551,13 +1561,12 @@ if st.session_state.submitted:
             )
 
             start_quiz_state(retry_quiz, st.session_state.quiz_type, clear_wrongs=True)
-
             st.session_state["_scroll_top_once"] = True
             st.rerun()
 
-    if show_post_ui:
-        st.divider()
-        st.subheader("📊 누적 학습 현황 (이번 세션)")
+if show_post_ui:
+    st.divider()
+    st.subheader("📊 누적 학습 현황 (이번 세션)")
 
         total_attempts = sum(x["total"] for x in st.session_state.history) if st.session_state.history else 0
         total_score = sum(x["score"] for x in st.session_state.history) if st.session_state.history else 0
