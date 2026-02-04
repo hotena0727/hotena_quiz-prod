@@ -46,7 +46,6 @@ label[data-baseweb="radio"] * {
 st.title("い형용사 퀴즈")
 st.markdown('<div id="__TOP__"></div>', unsafe_allow_html=True)
 
-render_floating_scroll_top()
 def scroll_to_top(nonce: int = 0):
     components.html(
         f"""
@@ -93,6 +92,7 @@ def render_floating_scroll_top():
     components.html(
         """
 <style>
+render_floating_scroll_top()
 /* ✅ 모바일에서만 보이게(원하면 삭제) */
 @media (min-width: 801px) { .fab-top { display:none !important; } }
 
