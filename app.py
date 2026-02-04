@@ -131,14 +131,13 @@ QUIZ_TYPES_ADMIN = ["reading", "meaning", "kr2jp"]       # 관리자만 3종
 # ============================================================
 # ✅ mastered_words를 유형별로 유지하는 유틸
 # ============================================================
-    # 관리자면 3종, 아니면 2종
-    return QUIZ_TYPES_ADMIN if is_admin() else QUIZ_TYPES_USER
-
 def ensure_mastered_words_shape():
     if "mastered_words" not in st.session_state or not isinstance(st.session_state.mastered_words, dict):
         st.session_state.mastered_words = {}
     for k in get_available_quiz_types():
         st.session_state.mastered_words.setdefault(k, set())
+          # 관리자면 3종, 아니면 2종
+    return QUIZ_TYPES_ADMIN if is_admin() else QUIZ_TYPES_USER
 # ============================================================
 # ✅ (중요) 위젯 잔상(q_...) 완전 제거 유틸
 # ============================================================
