@@ -1360,7 +1360,7 @@ if st.session_state.submitted:
                 st.exception(e)  # ← 이게 핵심 (원인을 숨기지 않음)
 
         if show_post_ui:
-        st.subheader("📌 내 최근 기록")
+            st.subheader("📌 내 최근 기록")
 
         def _fetch_hist():
             return fetch_recent_attempts(sb_authed_local, user_id, limit=10)
