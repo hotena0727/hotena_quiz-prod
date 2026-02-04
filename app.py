@@ -55,6 +55,7 @@ sb = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 # ============================================================
 # ✅ 상수/설정
 # ============================================================
+SHOW_POST_SUBMIT_UI = "N"   # "Y"면 제출 후 상세(통계/기록/오답노트/누적현황) 표시
 NAVER_TALK_URL = "https://talk.naver.com/W45141"
 APP_URL = "https://hotenaquiztestapp-5wiha4zfuvtnq4qgxdhq72.streamlit.app/"
 LEVEL = "N4"
@@ -1268,6 +1269,9 @@ if not all_answered:
 # ✅ 제출 후 화면
 # ============================================================
 if st.session_state.submitted:
+    show_post_ui = (SHOW_POST_SUBMIT_UI == "Y") or is_admin()
+    
+if st.session_state.submitted:
     ensure_mastered_words_shape()
     current_type = st.session_state.quiz_type
 
@@ -1349,11 +1353,13 @@ if st.session_state.submitted:
             try:
                 run_db(_save_stats)
                 st.session_state.stats_saved_this_attempt = True
-                st.success("✅ 단어 통계 저장 성공")
+                if show_post_ui:
+                    st.success("✅ 단어 통계 저장 성공")
             except Exception as e:
                 st.error("❌ 단어 통계 저장 실패 (아래 에러가 진짜 원인입니다)")
                 st.exception(e)  # ← 이게 핵심 (원인을 숨기지 않음)
 
+        if show_post_ui:
         st.subheader("📌 내 최근 기록")
 
         def _fetch_hist():
@@ -1394,7 +1400,7 @@ if st.session_state.submitted:
 
         st.session_state.session_stats_applied_this_attempt = True
 
-    if st.session_state.wrong_list:
+    if show_post_ui and st.session_state.wrong_list:
         st.subheader("❌ 오답 노트")
 
         st.markdown(
@@ -1484,7 +1490,8 @@ if st.session_state.submitted:
             st.rerun()
 
     st.divider()
-    st.subheader("📊 누적 학습 현황 (이번 세션)")
+    if show_post_ui:
+        st.subheader("📊 누적 학습 현황 (이번 세션)")
 
     total_attempts = sum(x["total"] for x in st.session_state.history) if st.session_state.history else 0
     total_score = sum(x["score"] for x in st.session_state.history) if st.session_state.history else 0
@@ -1510,4 +1517,5 @@ if st.session_state.submitted:
         st.session_state.total_counter = {}
         st.rerun()
 
-    render_naver_talk()
+    if show_post_ui:
+        render_naver_talk()
