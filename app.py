@@ -64,21 +64,19 @@ KST_TZ = "Asia/Seoul"
 quiz_label_map = {
     "reading": "발음",
     "meaning": "뜻",
-    "kr2jp": "한→일",
 }
 quiz_label_for_table = {
     "reading": "발음",
     "meaning": "뜻",
-    "kr2jp": "한→일",
 }
-QUIZ_TYPES = ["reading", "meaning", "kr2jp"]
+QUIZ_TYPES = ["reading", "meaning"]
 
 # ============================================================
 # ✅ mastered_words를 유형별로 유지하는 유틸
 # ============================================================
 def ensure_mastered_words_shape():
     if "mastered_words" not in st.session_state or not isinstance(st.session_state.mastered_words, dict):
-        st.session_state.mastered_words = {"reading": set(), "meaning": set(), "kr2jp": set()}
+        st.session_state.mastered_words = {"reading": set(), "meaning": set()}
     else:
         for k in QUIZ_TYPES:
             st.session_state.mastered_words.setdefault(k, set())
@@ -1085,11 +1083,10 @@ def build_quiz(qtype: str) -> list:
         base_pool = pool_i_reading
     elif qtype == "meaning":
         base_pool = pool_i_meaning
-    elif qtype == "kr2jp":
-        base_pool = pool_i_reading
     else:
-        base_pool = pool_i_meaning
-
+        base_pool = pool_i_meaning  # fallback
+        qtype = "meaning"           # 세션도 정리하고 싶으면 같이
+        
     ensure_mastered_words_shape()
     mastered = st.session_state.mastered_words.get(qtype, set())
 
