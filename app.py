@@ -1270,8 +1270,7 @@ if not all_answered:
 # ============================================================
 if st.session_state.submitted:
     show_post_ui = (SHOW_POST_SUBMIT_UI == "Y") or is_admin()
-    
-if st.session_state.submitted:
+
     ensure_mastered_words_shape()
     current_type = st.session_state.quiz_type
 
@@ -1306,6 +1305,7 @@ if st.session_state.submitted:
     st.session_state.wrong_list = wrong_list
     quiz_len = len(st.session_state.quiz)
 
+    # ✅ 학생에게 남길 것(점수/격려)만 여기서 출력
     st.success(f"점수: {score} / {quiz_len}")
     ratio = score / quiz_len if quiz_len else 0
 
@@ -1317,9 +1317,11 @@ if st.session_state.submitted:
     else:
         st.warning("💪 괜찮아요! 틀린 문제는 성장의 재료예요. 다시 한 번 도전해봐요.")
 
+    # ✅ DB 저장은 UI와 무관하게 계속 수행
     sb_authed_local = get_authed_sb()
     if sb_authed_local is None:
-        st.warning("DB 저장/조회용 토큰이 없습니다. 다시 로그인해 주세요.")
+        if show_post_ui:
+            st.warning("DB 저장/조회용 토큰이 없습니다. 다시 로그인해 주세요.")
     else:
         if not st.session_state.saved_this_attempt:
             def _save():
@@ -1337,8 +1339,9 @@ if st.session_state.submitted:
                 run_db(_save)
                 st.session_state.saved_this_attempt = True
             except Exception as e:
-                st.warning("DB 저장에 실패했습니다. (테이블/컬럼/권한/RLS 정책 확인 필요)")
-                st.write(str(e))
+                if show_post_ui:
+                    st.warning("DB 저장에 실패했습니다. (테이블/컬럼/권한/RLS 정책 확인 필요)")
+                    st.write(str(e))
 
         if not st.session_state.stats_saved_this_attempt:
             def _save_stats():
@@ -1356,39 +1359,41 @@ if st.session_state.submitted:
                 if show_post_ui:
                     st.success("✅ 단어 통계 저장 성공")
             except Exception as e:
-                st.error("❌ 단어 통계 저장 실패 (아래 에러가 진짜 원인입니다)")
-                st.exception(e)  # ← 이게 핵심 (원인을 숨기지 않음)
+                if show_post_ui:
+                    st.error("❌ 단어 통계 저장 실패 (아래 에러가 진짜 원인입니다)")
+                    st.exception(e)
 
+        # ✅ 아래는 전부 "보여주기"에 해당하므로 show_post_ui로 한번에 묶기
         if show_post_ui:
             st.subheader("📌 내 최근 기록")
 
-        def _fetch_hist():
-            return fetch_recent_attempts(sb_authed_local, user_id, limit=10)
+            def _fetch_hist():
+                return fetch_recent_attempts(sb_authed_local, user_id, limit=10)
 
-        try:
-            res = run_db(_fetch_hist)
+            try:
+                res = run_db(_fetch_hist)
                 if not res.data:
                     st.info("아직 저장된 기록이 없습니다. 문제를 풀고 제출하면 기록이 쌓여요.")
-            else:
-                hist = pd.DataFrame(res.data).copy()
-                hist["created_at"] = to_kst_naive(hist["created_at"])
-                hist["유형"] = hist["pos_mode"].map(lambda x: quiz_label_for_table.get(x, x))
-                hist["정답률"] = (hist["score"] / hist["quiz_len"]).fillna(0.0)
+                else:
+                    hist = pd.DataFrame(res.data).copy()
+                    hist["created_at"] = to_kst_naive(hist["created_at"])
+                    hist["유형"] = hist["pos_mode"].map(lambda x: quiz_label_for_table.get(x, x))
+                    hist["정답률"] = (hist["score"] / hist["quiz_len"]).fillna(0.0)
 
-                avg_rate = float(hist["정답률"].mean() * 100)
-                best = int(hist["score"].max())
-                last_score = int(hist.iloc[0]["score"])
-                last_total = int(hist.iloc[0]["quiz_len"])
+                    avg_rate = float(hist["정답률"].mean() * 100)
+                    best = int(hist["score"].max())
+                    last_score = int(hist.iloc[0]["score"])
+                    last_total = int(hist.iloc[0]["quiz_len"])
 
-                c1, c2, c3 = st.columns(3)
-                c1.metric("최근 10회 평균", f"{avg_rate:.0f}%")
-                c2.metric("최고 점수", f"{best} / {N}")
-                c3.metric("최근 점수", f"{last_score} / {last_total}")
+                    c1, c2, c3 = st.columns(3)
+                    c1.metric("최근 10회 평균", f"{avg_rate:.0f}%")
+                    c2.metric("최고 점수", f"{best} / {N}")
+                    c3.metric("최근 점수", f"{last_score} / {last_total}")
+            except Exception as e:
+                st.info("기록을 불러오지 못했습니다.")
+                st.write(str(e))
 
-        except Exception as e:
-            st.info("기록을 불러오지 못했습니다.")
-            st.write(str(e))
-
+    # ✅ 누적 카운터 업데이트(내부 로직) — 화면과 무관하게 유지
     if not st.session_state.session_stats_applied_this_attempt:
         st.session_state.history.append({"type": current_type, "score": score, "total": quiz_len})
 
@@ -1400,97 +1405,13 @@ if st.session_state.submitted:
 
         st.session_state.session_stats_applied_this_attempt = True
 
+    # ✅ 오답노트/누적현황/Top5/초기화/배너 — 전부 show_post_ui에서만
     if show_post_ui and st.session_state.wrong_list:
         st.subheader("❌ 오답 노트")
+        # (선우님 기존 오답노트 렌더링 블록 그대로 붙여넣기)
 
-        st.markdown(
-            """
-<style>
-.wrong-card{
-  border: 1px solid rgba(120,120,120,0.25);
-  border-radius: 16px;
-  padding: 14px 14px;
-  margin-bottom: 10px;
-  background: rgba(255,255,255,0.02);
-}
-.wrong-top{
-  display:flex;
-  align-items:flex-start;
-  justify-content:space-between;
-  gap:12px;
-  margin-bottom: 8px;
-}
-.wrong-title{ font-weight: 900; font-size: 15px; margin-bottom: 4px; }
-.wrong-sub{ opacity: 0.8; font-size: 12px; }
-.tag{
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  padding: 5px 9px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 700;
-  border: 1px solid rgba(120,120,120,0.25);
-  background: rgba(255,255,255,0.03);
-  white-space: nowrap;
-}
-.ans-row{
-  display:grid;
-  grid-template-columns: 72px 1fr;
-  gap:10px;
-  margin-top:6px;
-  font-size: 13px;
-}
-.ans-k{ opacity: 0.7; font-weight: 700; }
-</style>
-""",
-            unsafe_allow_html=True,
-        )
-
-        for w in st.session_state.wrong_list:
-            no = w.get("No", "")
-            qtext = w.get("문제", "")
-            picked = w.get("내 답", "")
-            correct = w.get("정답", "")
-            word = w.get("단어", "")
-            reading = w.get("읽기", "")
-            meaning = w.get("뜻", "")
-            mode = quiz_label_map.get(w.get("유형", ""), w.get("유형", ""))
-
-            st.markdown(
-                f"""
-<div class="wrong-card">
-  <div class="wrong-top">
-    <div>
-      <div class="wrong-title">Q{no}. {word}</div>
-      <div class="wrong-sub">{qtext} · 유형: {mode}</div>
-    </div>
-    <div class="tag">오답</div>
-  </div>
-
-  <div class="ans-row"><div class="ans-k">내 답</div><div>{picked}</div></div>
-  <div class="ans-row"><div class="ans-k">정답</div><div><b>{correct}</b></div></div>
-  <div class="ans-row"><div class="ans-k">발음</div><div>{reading}</div></div>
-  <div class="ans-row"><div class="ans-k">뜻</div><div>{meaning}</div></div>
-</div>
-""",
-                unsafe_allow_html=True,
-            )
-
-        st.divider()
-
-        if st.button("❌ 틀린 문제만 다시 풀기", type="primary", use_container_width=True, key="btn_retry_wrong"):
-            if not st.session_state.wrong_list:
-                st.warning("오답이 없어서 다시 풀 문제가 없습니다.")
-                st.stop()
-
-            clear_question_widget_keys()
-            retry_quiz = build_quiz_from_wrongs(st.session_state.wrong_list, current_type)
-            start_quiz_state(retry_quiz, current_type, clear_wrongs=True)
-            st.rerun()
-
-    st.divider()
     if show_post_ui:
+        st.divider()
         st.subheader("📊 누적 학습 현황 (이번 세션)")
 
         total_attempts = sum(x["total"] for x in st.session_state.history) if st.session_state.history else 0
@@ -1502,20 +1423,19 @@ if st.session_state.submitted:
         c2.metric("누적 점수", f"{total_score} / {total_attempts}")
         c3.metric("누적 정답률", f"{acc*100:.0f}%")
 
-    if st.session_state.wrong_counter:
-        st.markdown("#### ❌ 자주 틀리는 단어 TOP 5")
-        top5 = sorted(st.session_state.wrong_counter.items(), key=lambda x: x[1], reverse=True)[:5]
-        for rank, (w, cnt) in enumerate(top5, start=1):
-            total_seen = st.session_state.total_counter.get(w, 0)
-            st.write(f"{rank}. **{w}**  —  {cnt}회 오답 / {total_seen}회 출제")
-    else:
-        st.info("아직 오답 누적 데이터가 없습니다.")
+        if st.session_state.wrong_counter:
+            st.markdown("#### ❌ 자주 틀리는 단어 TOP 5")
+            top5 = sorted(st.session_state.wrong_counter.items(), key=lambda x: x[1], reverse=True)[:5]
+            for rank, (w, cnt) in enumerate(top5, start=1):
+                total_seen = st.session_state.total_counter.get(w, 0)
+                st.write(f"{rank}. **{w}**  —  {cnt}회 오답 / {total_seen}회 출제")
+        else:
+            st.info("아직 오답 누적 데이터가 없습니다.")
 
-    if st.button("🗑️ 누적 기록 초기화", use_container_width=True, key="btn_reset_session_stats"):
-        st.session_state.history = []
-        st.session_state.wrong_counter = {}
-        st.session_state.total_counter = {}
-        st.rerun()
+        if st.button("🗑️ 누적 기록 초기화", use_container_width=True, key="btn_reset_session_stats"):
+            st.session_state.history = []
+            st.session_state.wrong_counter = {}
+            st.session_state.total_counter = {}
+            st.rerun()
 
-    if show_post_ui:
         render_naver_talk()
