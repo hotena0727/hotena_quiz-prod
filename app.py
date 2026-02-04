@@ -12,6 +12,14 @@ from collections import Counter
 # ============================================================
 st.set_page_config(page_title="JLPT Quiz", layout="centered")
 
+# ✅✅✅ [해결 3] Streamlit 하단 로고/푸터 숨기기 (가장 위에서)
+st.markdown("""
+<style>
+footer {display:none !important;}
+#MainMenu {display:none !important;}
+</style>
+""", unsafe_allow_html=True)
+
 st.markdown("""
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -106,7 +114,10 @@ def render_floating_scroll_top():
   // 스타일 (PC/모바일 모두 표시)
   btn.style.position = "fixed";
   btn.style.right = "14px";
-  btn.style.bottom = "calc(18px + env(safe-area-inset-bottom) + 72px) !important";
+
+  // ✅ 로고/하단바를 피해서 위로 올림 (원하는 만큼 숫자만 조절)
+  btn.style.bottom = "calc(18px + env(safe-area-inset-bottom) + 72px)";
+
   btn.style.zIndex = "2147483647";
   btn.style.width = "46px";
   btn.style.height = "46px";
@@ -161,6 +172,7 @@ def render_floating_scroll_top():
 render_floating_scroll_top()
 
 # ✅ 버튼 클릭 후 rerun되면, 이 플래그를 보고 최상단 스크롤 실행
+
 if st.session_state.get("_scroll_top_once"):
     st.session_state["_scroll_top_once"] = False
     st.session_state["_scroll_top_nonce"] = st.session_state.get("_scroll_top_nonce", 0) + 1
