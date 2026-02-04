@@ -17,6 +17,20 @@ st.markdown("""
 <link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&family=Noto+Sans+JP:wght@400;500;700;800&display=swap" rel="stylesheet">
 
 <style>
+/* 출제유형 버튼을 '작고 납작하게' + 줄바꿈 금지 */
+div.stButton > button {
+  padding: 6px 10px !important;
+  font-size: 13px !important;
+  line-height: 1.1 !important;
+  white-space: nowrap !important;  /* ✅ 1줄 고정 */
+}
+
+/* 칼럼 사이 간격을 살짝 줄여서 한 줄에 더 잘 들어가게 */
+div[data-testid="column"]{
+  padding-left: 4px !important;
+  padding-right: 4px !important;
+}
+
 :root{ --jp-rounded: "Noto Sans JP","Kosugi Maru","Hiragino Sans","Yu Gothic","Meiryo",sans-serif; }
 .jp, .jp *{ font-family: var(--jp-rounded) !important; line-height:1.7; letter-spacing:.2px; }
 
@@ -1241,18 +1255,15 @@ if "quiz" not in st.session_state:
 
 st.markdown("### 출제 유형")
 
-cols = st.columns(len(available_types))
-clicked = None
+clicked = st.segmented_control(
+    label="",
+    options=available_types,
+    format_func=lambda x: ("✅ " + quiz_label_map.get(x, x)) if x == st.session_state.quiz_type else quiz_label_map.get(x, x),
+    default=st.session_state.quiz_type,
+    key="seg_qtype",
+)
 
-for i, t in enumerate(available_types):
-    label = quiz_label_map.get(t, t)
-    if t == st.session_state.quiz_type:
-        label = f"✅ {label}"
-
-    if cols[i].button(label, use_container_width=True, key=f"btn_qtype_{t}"):
-        clicked = t
-
-
+# 선택 변경 시 퀴즈 재생성
 if clicked and clicked != st.session_state.quiz_type:
     clear_question_widget_keys()
     new_quiz = build_quiz(clicked)
@@ -1260,23 +1271,6 @@ if clicked and clicked != st.session_state.quiz_type:
     st.rerun()
 
 st.caption(f"현재 선택: **{quiz_label_map.get(st.session_state.quiz_type, st.session_state.quiz_type)}**")
-st.divider()
-
-col1, col2 = st.columns(2)
-
-with col1:
-    if st.button("🔄 새 문제(랜덤 10문항)", use_container_width=True, key="btn_new_quiz"):
-        clear_question_widget_keys()
-        new_quiz = build_quiz(st.session_state.quiz_type)
-        start_quiz_state(new_quiz, st.session_state.quiz_type, clear_wrongs=True)
-        st.rerun()
-
-with col2:
-    if st.button("🧹 선택 초기화", use_container_width=True, key="btn_reset_choice"):
-        clear_question_widget_keys()
-        start_quiz_state(st.session_state.quiz, st.session_state.quiz_type, clear_wrongs=False)
-        st.rerun()
-
 st.divider()
 
 if st.button("✅ 맞힌 단어 제외 초기화", use_container_width=True, key="btn_reset_mastered_current_type"):
