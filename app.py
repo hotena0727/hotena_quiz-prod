@@ -1517,7 +1517,7 @@ if st.session_state.submitted:
     show_post_ui = (SHOW_POST_SUBMIT_UI == "Y") or is_admin()
 
     if show_post_ui and st.session_state.wrong_list:
-    st.subheader("❌ 오답 노트")
+      st.subheader("❌ 오답 노트")
 
     st.markdown(
         """
