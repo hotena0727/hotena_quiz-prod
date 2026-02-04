@@ -1439,7 +1439,7 @@ if st.session_state.submitted:
             st.session_state.total_counter = {}
             st.rerun()
         
-        show_naver_talk = (SHOW_NAVER_TALK == "Y") or is_admin()
+    show_naver_talk = (SHOW_NAVER_TALK == "Y") or is_admin()
         
     if show_naver_talk:
         render_naver_talk()
