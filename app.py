@@ -1513,7 +1513,10 @@ if st.session_state.submitted:
         st.session_state.session_stats_applied_this_attempt = True
 
 # ✅ 오답노트/누적현황/Top5/초기화/배너 — 전부 show_post_ui에서만
-if show_post_ui and st.session_state.wrong_list:
+if st.session_state.submitted:
+    show_post_ui = (SHOW_POST_SUBMIT_UI == "Y") or is_admin()
+
+    if show_post_ui and st.session_state.wrong_list:
     st.subheader("❌ 오답 노트")
 
     st.markdown(
