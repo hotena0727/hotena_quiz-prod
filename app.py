@@ -1255,6 +1255,12 @@ if st.session_state.page == "my":
 BASE_DIR = Path(__file__).resolve().parent
 CSV_PATH = BASE_DIR / "data" / "words_adj_300.csv"
 
+try:
+    pool, pool_i, pool_i_reading, pool_i_meaning = load_word_pools(str(CSV_PATH), LEVEL, N)
+except Exception as e:
+    st.error(f"단어 데이터 로드 실패: {e}")
+    st.stop()
+    
 READ_KW = dict(
     dtype=str,
     keep_default_na=False,
@@ -1296,6 +1302,42 @@ pool_i_meaning = pool_i.copy()
 if len(pool_i) < N:
     st.error(f"い형용사 단어가 부족합니다: pool={len(pool_i)}")
     st.stop()
+
+@st.cache_data(show_spinner=False)
+def load_word_pools(csv_path: str, level: str, n: int):
+    READ_KW = dict(
+        dtype=str,
+        keep_default_na=False,
+        na_values=["nan", "NaN", "NULL", "null", "None", "none"],
+    )
+
+    df = pd.read_csv(csv_path, **READ_KW)
+    if len(df.columns) == 1 and "\t" in df.columns[0]:
+        df = pd.read_csv(csv_path, sep="\t", **READ_KW)
+
+    df.columns = df.columns.astype(str).str.replace("\ufeff", "", regex=False).str.strip()
+
+    required_cols = ["jp_word", "reading", "meaning", "level", "pos"]
+    missing = [c for c in required_cols if c not in df.columns]
+    if missing:
+        raise ValueError(f"CSV 컬럼이 부족합니다: {missing}")
+
+    for c in required_cols:
+        df[c] = df[c].astype(str).str.strip()
+        df[c] = df[c].replace({"nan": "", "NaN": "", "NULL": "", "null": "", "None": "", "none": ""})
+
+    df = df[(df["reading"] != "") & (df["meaning"] != "") & (df["level"] != "") & (df["pos"] != "")].copy()
+
+    pool = df[df["level"] == level].copy()
+    pool_i = pool[pool["pos"] == "i_adj"].copy()
+
+    pool_i_reading = pool_i[pool_i["jp_word"].notna() & (pool_i["jp_word"].astype(str).str.strip() != "")].copy()
+    pool_i_meaning = pool_i.copy()
+
+    if len(pool_i) < n:
+        raise ValueError(f"い형용사 단어가 부족합니다: pool={len(pool_i)}")
+
+    return pool, pool_i, pool_i_reading, pool_i_meaning
 
 # ============================================================
 # ✅ 퀴즈 로직
