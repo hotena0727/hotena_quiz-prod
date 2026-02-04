@@ -134,10 +134,13 @@ QUIZ_TYPES_ADMIN = ["reading", "meaning", "kr2jp"]       # 관리자만 3종
 def ensure_mastered_words_shape():
     if "mastered_words" not in st.session_state or not isinstance(st.session_state.mastered_words, dict):
         st.session_state.mastered_words = {}
-    for k in get_available_quiz_types():
+
+    # ✅ get_available_quiz_types()를 여기서 부르지 말고(순서 꼬임 방지),
+    #    is_admin() 기준으로 직접 결정
+    types = QUIZ_TYPES_ADMIN if is_admin() else QUIZ_TYPES_USER
+
+    for k in types:
         st.session_state.mastered_words.setdefault(k, set())
-          # 관리자면 3종, 아니면 2종
-    return QUIZ_TYPES_ADMIN if is_admin() else QUIZ_TYPES_USER
 # ============================================================
 # ✅ (중요) 위젯 잔상(q_...) 완전 제거 유틸
 # ============================================================
@@ -490,6 +493,9 @@ def is_admin() -> bool:
     st.session_state["is_admin_cached"] = val
     return bool(val)
 
+def get_available_quiz_types() -> list[str]:
+    return QUIZ_TYPES_ADMIN if is_admin() else QUIZ_TYPES_USER
+  
 # ============================================================
 # ✅ 로그인 UI
 # ============================================================
@@ -1192,22 +1198,12 @@ def build_quiz(qtype: str) -> list:
 def _safe_build_quiz_after_reset(qtype: str) -> list:
     return build_quiz(qtype)
 
-# ✅ 현재 사용자 기준으로 사용 가능한 출제유형
-available_types = (["reading", "meaning", "kr2jp"] if is_admin() else ["reading", "meaning"])
-if not available_types:
-    available_types = ["reading", "meaning"]
+# ✅✅✅ 세션 초기화 들어가기 전에 "먼저" 계산 (중요)
+available_types = get_available_quiz_types()
 
 # ============================================================
 # ✅ 세션 초기화
 # ============================================================
-QUIZ_TYPES_USER  = ["reading", "meaning"]
-QUIZ_TYPES_ADMIN = ["reading", "meaning", "kr2jp"]
-
-def get_available_quiz_types():
-    return QUIZ_TYPES_ADMIN if is_admin() else QUIZ_TYPES_USER
-
-def get_quiz_types():
-    return QUIZ_TYPES_ADMIN if is_admin() else QUIZ_TYPES_USER
 
 if "quiz_type" not in st.session_state or st.session_state.get("quiz_type") not in available_types:
     st.session_state.quiz_type = available_types[0]  # 보통 "reading"
@@ -1242,31 +1238,20 @@ if "quiz" not in st.session_state:
 # ============================================================
 # ✅ 상단 UI (출제유형/새문제/초기화)
 # ============================================================
-QUIZ_TYPES_USER  = ["reading", "meaning"]                 # 일반 유저: 2개
-QUIZ_TYPES_ADMIN = ["reading", "meaning", "kr2jp"]        # 관리자: 3개(원하면)
-
-def get_available_quiz_types() -> list[str]:
-    # is_admin()이 아직 준비 안 된 시점이면 기본값으로 안전하게
-    try:
-        return QUIZ_TYPES_ADMIN if is_admin() else QUIZ_TYPES_USER
-    except Exception:
-        return QUIZ_TYPES_USER
-        available_types = get_available_quiz_types()
 
 st.markdown("### 출제 유형")
 
-# ✅ 버튼식 (3개/2개 모두 대응)
 cols = st.columns(len(available_types))
 clicked = None
 
 for i, t in enumerate(available_types):
     label = quiz_label_map.get(t, t)
-    # 현재 선택된 유형이면 강조 이모지
     if t == st.session_state.quiz_type:
         label = f"✅ {label}"
 
     if cols[i].button(label, use_container_width=True, key=f"btn_qtype_{t}"):
         clicked = t
+
 
 if clicked and clicked != st.session_state.quiz_type:
     clear_question_widget_keys()
@@ -1275,9 +1260,6 @@ if clicked and clicked != st.session_state.quiz_type:
     st.rerun()
 
 st.caption(f"현재 선택: **{quiz_label_map.get(st.session_state.quiz_type, st.session_state.quiz_type)}**")
-st.divider()
-
-st.caption(f"현재 선택: **{quiz_label_map[st.session_state.quiz_type]}**")
 st.divider()
 
 col1, col2 = st.columns(2)
