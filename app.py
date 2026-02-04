@@ -1463,12 +1463,14 @@ if st.session_state.submitted:
         "✅ 다음 10문항 시작하기",
         type="primary",
         use_container_width=True,
-        key="✅ 다음 10문항 시작하기",
+        key="btn_next_10",  # ✅ key는 이런 식으로!
     ):
         clear_question_widget_keys()
         new_quiz = build_quiz(st.session_state.quiz_type)
         start_quiz_state(new_quiz, st.session_state.quiz_type, clear_wrongs=True)
 
+        st.session_state["_scroll_top_once"] = True  # ✅ 이 줄이 핵심
+        
         # (선택) 진행중 저장(progress)도 같이 비우고 싶으면 아래 3줄 활성화
         # sb_authed_local2 = get_authed_sb()
         # if sb_authed_local2 is not None:
