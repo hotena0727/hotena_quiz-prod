@@ -894,7 +894,21 @@ def render_admin_dashboard():
     c2.metric("평균 점수", f"{df_admin['score'].mean():.2f}")
     c3.metric("평균 오답", f"{df_admin['wrong_count'].mean():.2f}")
 
-    st.dataframe(df_admin, use_container_width=True, hide_index=True)
+    st.markdown('<div class="weak-wrap">', unsafe_allow_html=True)
+
+    for idx, (word, cnt) in enumerate(top10, start=1):
+        st.markdown(
+            f"""
+    <div class="weak-card">
+      <div class="weak-word">{idx}. {word}</div>
+      <div class="weak-badge">오답 {cnt}회</div>
+    </div>
+    """,
+            unsafe_allow_html=True,
+        )
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
 
     csv = df_admin.to_csv(index=False).encode("utf-8-sig")
     st.download_button("⬇️ CSV 다운로드", csv, file_name="quiz_attempts_admin.csv", use_container_width=True, key="btn_admin_csv")
