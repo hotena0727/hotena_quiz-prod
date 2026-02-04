@@ -1595,7 +1595,6 @@ if st.session_state.submitted:
 
     # ✅✅✅ 오답노트 "다음"에 오답만 다시 풀기 버튼 배치
     # 일반 유저에게 숨기고 싶으면 is_admin() 유지 / 보이게 하고 싶으면 조건 제거
-    if is_admin():
         if st.button(
             "❌ 틀린 문제만 다시 풀기",
             type="primary",
