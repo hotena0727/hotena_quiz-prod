@@ -44,6 +44,7 @@ label[data-baseweb="radio"] * {
 """, unsafe_allow_html=True)
 
 st.title("い형용사 퀴즈")
+render_floating_scroll_top()
 st.markdown('<div id="__TOP__"></div>', unsafe_allow_html=True)
 def scroll_to_top(nonce: int = 0):
     components.html(
