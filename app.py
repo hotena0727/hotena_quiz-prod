@@ -1193,7 +1193,7 @@ def _safe_build_quiz_after_reset(qtype: str) -> list:
     return build_quiz(qtype)
 
 # ✅ 현재 사용자 기준으로 사용 가능한 출제유형
-available_types = get_available_quiz_types()  # 또는 get_quiz_types()
+available_types = (["reading", "meaning", "kr2jp"] if is_admin() else ["reading", "meaning"])
 if not available_types:
     available_types = ["reading", "meaning"]
 
