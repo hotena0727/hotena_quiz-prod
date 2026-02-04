@@ -1300,16 +1300,29 @@ if clicked and clicked != st.session_state.quiz_type:
 st.caption(f"현재 선택: **{quiz_label_map.get(st.session_state.quiz_type, st.session_state.quiz_type)}**")
 st.divider()
 
-if st.button("✅ 맞힌 단어 제외 초기화", use_container_width=True, key="btn_reset_mastered_current_type"):
-    ensure_mastered_words_shape()
-    st.session_state.mastered_words[st.session_state.quiz_type] = set()
+# ✅✅ 여기부터 추가/정리 (새 문제 + 초기화)
+cbtn1, cbtn2 = st.columns(2)
 
-    clear_question_widget_keys()
-    new_quiz = _safe_build_quiz_after_reset(st.session_state.quiz_type)
-    start_quiz_state(new_quiz, st.session_state.quiz_type, clear_wrongs=True)
+with cbtn1:
+    if st.button("🔄 새 문제(랜덤 10문항)", use_container_width=True, key="btn_new_random_10"):
+        clear_question_widget_keys()
+        # 현재 유형 그대로 랜덤 새 세트 생성
+        new_quiz = build_quiz(st.session_state.quiz_type)
+        start_quiz_state(new_quiz, st.session_state.quiz_type, clear_wrongs=True)
+        st.session_state["_scroll_top_once"] = True
+        st.rerun()
 
-    st.success(f"초기화 완료 (유형: {quiz_label_map[st.session_state.quiz_type]})")
-    st.rerun()
+with cbtn2:
+    if st.button("✅ 맞힌 단어 제외 초기화", use_container_width=True, key="btn_reset_mastered_current_type"):
+        ensure_mastered_words_shape()
+        st.session_state.mastered_words[st.session_state.quiz_type] = set()
+
+        clear_question_widget_keys()
+        new_quiz = _safe_build_quiz_after_reset(st.session_state.quiz_type)
+        start_quiz_state(new_quiz, st.session_state.quiz_type, clear_wrongs=True)
+
+        st.success(f"초기화 완료 (유형: {quiz_label_map[st.session_state.quiz_type]})")
+        st.session_state["_scroll_top]()_
 
 # ============================================================
 # ✅ answers 길이 자동 맞춤
