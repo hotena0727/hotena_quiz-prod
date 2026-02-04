@@ -111,13 +111,9 @@ def render_floating_scroll_top():
   btn.id = "__FAB_TOP__";
   btn.textContent = "↑";
 
-  // 스타일 (PC/모바일 모두 표시)
+  // 기본 스타일
   btn.style.position = "fixed";
   btn.style.right = "14px";
-
-  // ✅ 로고/하단바를 피해서 위로 올림 (원하는 만큼 숫자만 조절)
-  btn.style.bottom = "calc(18px + env(safe-area-inset-bottom) + 110px)";
-
   btn.style.zIndex = "2147483647";
   btn.style.width = "46px";
   btn.style.height = "46px";
@@ -133,6 +129,7 @@ def render_floating_scroll_top():
   btn.style.display = "flex";
   btn.style.alignItems = "center";
   btn.style.justifyContent = "center";
+  btn.style.opacity = "0"; // 위치 잡힌 후 표시
 
   const goTop = () => {
     try {
@@ -159,15 +156,59 @@ def render_floating_scroll_top():
 
   btn.addEventListener("click", goTop);
 
+  // ✅ (핵심) 모바일 하단 탭바/주소창 때문에 가려지는 영역을 계산해서 bottom을 띄움
+  // BASE: "내가 원하는 기본 띄움" (숫자 키우면 더 위로 올라감)
+  const BASE = 24;      // 기본 여백
+  const EXTRA = 90;     // 여기 숫자로 올리고 내리면 됨 (추천 80~140)
+
+  const reposition = () => {
+    try {
+      const vv = window.parent.visualViewport || window.visualViewport;
+
+      // layout viewport - visual viewport = 가려지는 영역(대부분 하단)
+      const innerH = window.parent.innerHeight || window.innerHeight;
+      const hiddenBottom = vv ? Math.max(0, innerH - vv.height - (vv.offsetTop || 0)) : 0;
+
+      // safe-area (아이폰 등)도 함께 반영
+      const safe = (() => {
+        // env()는 JS에서 직접 못 읽으니, 보수적으로 0 처리.
+        // (아이폰까지 확실히 하려면 CSS calc를 쓰는데, 지금은 안드로이드 이슈가 핵심이라 생략)
+        return 0;
+      })();
+
+      const bottomPx = BASE + EXTRA + hiddenBottom + safe;
+
+      btn.style.bottom = bottomPx + "px";
+      btn.style.opacity = "1";
+    } catch(e) {
+      // 최후 fallback (px 꼭!)
+      btn.style.bottom = "140px";
+      btn.style.opacity = "1";
+    }
+  };
+
   doc.body.appendChild(btn);
 
-  // 첫 로드에서도 한 번 위치 보정(가끔 안 붙는 환경 대비)
-  setTimeout(() => { try { btn.style.opacity = "1"; } catch(e) {} }, 50);
+  // 첫 렌더 + 이후 변화 대응
+  reposition();
+  setTimeout(reposition, 50);
+  setTimeout(reposition, 200);
+  setTimeout(reposition, 600);
+
+  window.parent.addEventListener("resize", reposition, {passive:true});
+  window.parent.addEventListener("scroll", reposition, {passive:true});
+
+  const vv = window.parent.visualViewport || window.visualViewport;
+  if (vv) {
+    vv.addEventListener("resize", reposition, {passive:true});
+    vv.addEventListener("scroll", reposition, {passive:true});
+  }
 })();
 </script>
         """,
         height=1,
     )
+
 
 render_floating_scroll_top()
 
