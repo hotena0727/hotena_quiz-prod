@@ -1863,6 +1863,8 @@ if st.session_state.submitted and st.session_state.wrong_list:
 
     st.divider()
 
+# ✅✅✅ 다음 10문항은 "submitted면 항상" (오답 0개여도)
+if st.session_state.submitted:
     if st.button(
         "✅ 다음 10문항 시작하기",
         type="primary",
@@ -1874,7 +1876,6 @@ if st.session_state.submitted and st.session_state.wrong_list:
         start_quiz_state(new_quiz, st.session_state.quiz_type, clear_wrongs=True)
         st.session_state["_scroll_top_once"] = True
         st.rerun()
-
      
     show_naver_talk = (SHOW_NAVER_TALK == "N") or is_admin()
         
