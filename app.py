@@ -118,23 +118,27 @@ KST_TZ = "Asia/Seoul"
 quiz_label_map = {
     "reading": "발음",
     "meaning": "뜻",
+    "kr2jp": "한→일",
 }
 quiz_label_for_table = {
     "reading": "발음",
     "meaning": "뜻",
+    "kr2jp": "한→일",
 }
-QUIZ_TYPES = ["reading", "meaning"]
+QUIZ_TYPES_USER = ["reading", "meaning"]                 # 일반 유저
+QUIZ_TYPES_ADMIN = ["reading", "meaning", "kr2jp"]       # 관리자만 3종
 
 # ============================================================
 # ✅ mastered_words를 유형별로 유지하는 유틸
 # ============================================================
+    # 관리자면 3종, 아니면 2종
+    return QUIZ_TYPES_ADMIN if is_admin() else QUIZ_TYPES_USER
+
 def ensure_mastered_words_shape():
     if "mastered_words" not in st.session_state or not isinstance(st.session_state.mastered_words, dict):
-        st.session_state.mastered_words = {"reading": set(), "meaning": set()}
-    else:
-        for k in QUIZ_TYPES:
-            st.session_state.mastered_words.setdefault(k, set())
-
+        st.session_state.mastered_words = {}
+    for k in get_available_quiz_types():
+        st.session_state.mastered_words.setdefault(k, set())
 # ============================================================
 # ✅ (중요) 위젯 잔상(q_...) 완전 제거 유틸
 # ============================================================
@@ -1137,9 +1141,14 @@ def build_quiz(qtype: str) -> list:
         base_pool = pool_i_reading
     elif qtype == "meaning":
         base_pool = pool_i_meaning
+    elif qtype == "kr2jp":
+        # 한→일: jp_word가 반드시 있어야 하므로 jp_word 비어있는 행은 제외 권장
+        base_pool = pool_i_meaning[
+            pool_i_meaning["jp_word"].notna() & (pool_i_meaning["jp_word"].astype(str).str.strip() != "")
+        ].copy()
     else:
-        base_pool = pool_i_meaning  # fallback
-        qtype = "meaning"           # 세션도 정리하고 싶으면 같이
+        base_pool = pool_i_meaning
+        qtype = "meaning"
         
     ensure_mastered_words_shape()
     mastered = st.session_state.mastered_words.get(qtype, set())
@@ -1187,8 +1196,10 @@ def _safe_build_quiz_after_reset(qtype: str) -> list:
 # ============================================================
 # ✅ 세션 초기화
 # ============================================================
-if "quiz_type" not in st.session_state or st.session_state.get("quiz_type") not in QUIZ_TYPES:
-    st.session_state.quiz_type = "reading"
+available_types = get_available_quiz_types()
+
+if "quiz_type" not in st.session_state or st.session_state.get("quiz_type") not in available_types:
+    st.session_state.quiz_type = available_types[0]  # 보통 "reading"
 
 if "quiz_version" not in st.session_state:
     st.session_state.quiz_version = 0
@@ -1220,22 +1231,31 @@ if "quiz" not in st.session_state:
 # ============================================================
 # ✅ 상단 UI (출제유형/새문제/초기화)
 # ============================================================
-current_index = QUIZ_TYPES.index(st.session_state.quiz_type)
+available_types = get_available_quiz_types()
 
-selected = st.radio(
-    "출제 유형",
-    options=QUIZ_TYPES,
-    format_func=lambda x: quiz_label_map.get(x, x),
-    horizontal=True,
-    index=current_index,
-    key="radio_quiz_type",
-)
+st.markdown("### 출제 유형")
 
-if selected != st.session_state.quiz_type:
+# ✅ 버튼식 (3개/2개 모두 대응)
+cols = st.columns(len(available_types))
+clicked = None
+
+for i, t in enumerate(available_types):
+    label = quiz_label_map.get(t, t)
+    # 현재 선택된 유형이면 강조 이모지
+    if t == st.session_state.quiz_type:
+        label = f"✅ {label}"
+
+    if cols[i].button(label, use_container_width=True, key=f"btn_qtype_{t}"):
+        clicked = t
+
+if clicked and clicked != st.session_state.quiz_type:
     clear_question_widget_keys()
-    new_quiz = build_quiz(selected)
-    start_quiz_state(new_quiz, selected, clear_wrongs=True)
+    new_quiz = build_quiz(clicked)
+    start_quiz_state(new_quiz, clicked, clear_wrongs=True)
     st.rerun()
+
+st.caption(f"현재 선택: **{quiz_label_map.get(st.session_state.quiz_type, st.session_state.quiz_type)}**")
+st.divider()
 
 st.caption(f"현재 선택: **{quiz_label_map[st.session_state.quiz_type]}**")
 st.divider()
