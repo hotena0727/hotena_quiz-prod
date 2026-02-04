@@ -29,51 +29,59 @@ label[data-baseweb="radio"] * {
 """, unsafe_allow_html=True)
 
 st.title("い형용사 퀴즈")
-def scroll_to_top():
+def scroll_to_top(key="scroll_top"):
     components.html(
         """
         <script>
         (function () {
+          const doc = window.parent.document;
+
+          const targets = [
+            doc.querySelector('[data-testid="stAppViewContainer"]'),
+            doc.querySelector('[data-testid="stMain"]'),
+            doc.querySelector('section.main'),
+            doc.documentElement,
+            doc.body
+          ].filter(Boolean);
+
           const go = () => {
             try {
-              // ✅ 1) Streamlit 본문 스크롤 컨테이너를 직접 잡는다
-              const doc = window.parent.document;
+              // 1) TOP 앵커로 강제 이동
+              const top = doc.getElementById("__TOP__");
+              if (top) top.scrollIntoView({behavior: "auto", block: "start"});
 
-              const main =
-                doc.querySelector("section.main") ||
-                doc.querySelector('[data-testid="stAppViewContainer"]') ||
-                doc.querySelector('[data-testid="stApp"]');
+              // 2) 스크롤 컨테이너들도 같이 0으로
+              targets.forEach(t => {
+                if (t && typeof t.scrollTo === "function") t.scrollTo({top: 0, left: 0, behavior: "auto"});
+                if (t) t.scrollTop = 0;
+              });
 
-              if (main) {
-                // ✅ 컨테이너가 스크롤을 가진 경우
-                main.scrollTo({ top: 0, left: 0, behavior: "auto" });
-                main.scrollTop = 0;
-              }
-
-              // ✅ 2) 혹시 window 스크롤인 경우도 같이 처리
+              // 3) window 스크롤도 같이
               window.parent.scrollTo(0, 0);
               window.scrollTo(0, 0);
-
-              doc.documentElement.scrollTop = 0;
-              doc.body.scrollTop = 0;
-            } catch (e) {}
+            } catch(e) {}
           };
 
+          // requestAnimationFrame + timeout 섞어서 “렌더 후”도 잡기
           go();
-          setTimeout(go, 80);
-          setTimeout(go, 200);
-          setTimeout(go, 450);
-          setTimeout(go, 900);
+          requestAnimationFrame(go);
+          setTimeout(go, 50);
+          setTimeout(go, 150);
+          setTimeout(go, 350);
+          setTimeout(go, 800);
         })();
         </script>
         """,
-        height=0,
+        height=1,   // ✅ 0 말고 1 (마운트 보장)
+        key=key,    // ✅ key로 강제 리마운트 가능
     )
+
 
 # ✅ 버튼 클릭 후 rerun되면, 이 플래그를 보고 최상단 스크롤 실행
 if st.session_state.get("_scroll_top_once"):
-    scroll_to_top()
     st.session_state["_scroll_top_once"] = False
+    st.session_state["_scroll_top_key"] = st.session_state.get("_scroll_top_key", 0) + 1
+    scroll_to_top(key=f"scroll_top_{st.session_state['_scroll_top_key']}")
 
 # ============================================================
 # ✅ Cookies
