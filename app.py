@@ -1463,7 +1463,7 @@ if st.session_state.submitted:
         "✅ 다음 10문항 시작하기",
         type="primary",
         use_container_width=True,
-        key=""✅ 다음 10문항 시작하기",
+        key="✅ 다음 10문항 시작하기",
     ):
         clear_question_widget_keys()
         new_quiz = build_quiz(st.session_state.quiz_type)
