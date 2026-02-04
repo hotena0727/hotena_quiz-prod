@@ -1116,7 +1116,7 @@ def build_quiz(qtype: str) -> list:
     if len(base_pool) < N:
         if len(base_pool) == 0:
             st.success("완벽합니다. 드디어 모두 정복했어요 ✅")
-            st.info("복습/재도전을 원하시면 아래 버튼으로 **현재 유형만** 바로 운용할 수 있어요.")
+            st.info("복습/재도전을 원하시면 아래 버튼으로 **현재 유형만** 바로 재시작 할 수 있어요.")
 
             if st.button("🧹 여기서 바로 초기화(원클릭)", use_container_width=True, key="btn_inline_reset_mastered"):
                 ensure_mastered_words_shape()
