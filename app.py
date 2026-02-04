@@ -1513,6 +1513,29 @@ if "total_counter" not in st.session_state:
 if "quiz" not in st.session_state:
     st.session_state.quiz = build_quiz(st.session_state.quiz_type)
 
+st.markdown("""
+<style>
+/* 출제유형(헤더) 아래 여백 줄이기 */
+.quiztype-title{
+  margin: 0 0 6px 0 !important;   /* 아래 6px만 */
+  padding: 0 !important;
+  font-weight: 800;
+}
+
+/* segmented_control(버튼 묶음) 위/아래 여백 줄이기 */
+div[data-testid="stSegmentedControl"]{
+  margin-top: 0px !important;
+  margin-bottom: 6px !important;
+}
+
+/* segmented_control 내부 라벨/컨테이너가 만드는 빈 공간도 줄이기(버전에 따라 효과 있음) */
+div[data-testid="stSegmentedControl"] > div{
+  padding-top: 0px !important;
+  padding-bottom: 0px !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 # ============================================================
 # ✅ 상단 UI (출제유형/새문제/초기화)
 # ============================================================
