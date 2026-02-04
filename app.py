@@ -159,7 +159,7 @@ def render_floating_scroll_top():
   // ✅ (핵심) 모바일 하단 탭바/주소창 때문에 가려지는 영역을 계산해서 bottom을 띄움
   // BASE: "내가 원하는 기본 띄움" (숫자 키우면 더 위로 올라감)
   const BASE = 24;      // 기본 여백
-  const EXTRA = 90;     // 여기 숫자로 올리고 내리면 됨 (추천 80~140)
+  const EXTRA = 140;     // 여기 숫자로 올리고 내리면 됨 (추천 80~140)
 
   const reposition = () => {
     try {
