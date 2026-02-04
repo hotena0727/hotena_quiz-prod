@@ -941,6 +941,56 @@ def render_my_dashboard():
     c3.metric("최근 점수", f"{last_score} / {last_total}")
 
     st.divider()
+        # ============================================================
+    # ✅ 자주 틀린 단어 TOP10 (최근 50회 기준)
+    # ============================================================
+    st.divider()
+    st.markdown("### ❌ 자주 틀린 단어 TOP10 (최근 50회)")
+
+    # quiz_attempts의 wrong_list를 펼쳐서 단어별로 카운트
+    counter = Counter()
+
+    # res.data 원본에 wrong_list가 들어있음 (hist는 일부 컬럼만 쓰고 있어서 res.data를 사용)
+    for row in (res.data or []):
+        wl = row.get("wrong_list") or []
+        if isinstance(wl, list):
+            for w in wl:
+                # w는 {"단어": "...", ...} 형태로 저장되어 있음
+                word = str(w.get("단어", "")).strip()
+                if word:
+                    counter[word] += 1
+
+    if not counter:
+        st.caption("아직 오답 데이터가 충분하지 않습니다. 몇 번 더 풀면 TOP10이 생겨요 🙂")
+        return
+
+    top10 = counter.most_common(10)
+
+    # 화면 표시용 테이블
+    df_top = pd.DataFrame(top10, columns=["단어", "오답횟수"])
+    st.dataframe(df_top, use_container_width=True, hide_index=True)
+
+    # 시험 보기 버튼
+    if st.button(
+        "❌ 이 TOP10으로 시험 보기",
+        type="primary",
+        use_container_width=True,
+        key="btn_quiz_from_top10",
+    ):
+        clear_question_widget_keys()
+
+        # build_quiz_from_wrongs가 기대하는 형태: [{"단어": "..."} , ...]
+        weak_wrong_list = [{"단어": w} for w, _ in top10]
+
+        retry_quiz = build_quiz_from_wrongs(
+            weak_wrong_list,
+            st.session_state.quiz_type,
+        )
+
+        start_quiz_state(retry_quiz, st.session_state.quiz_type, clear_wrongs=True)
+        st.session_state["_scroll_top_once"] = True
+        st.session_state.page = "quiz"
+        st.rerun()
     st.markdown("### 최근 기록")
 
     st.markdown(
@@ -1006,56 +1056,6 @@ def render_my_dashboard():
         st.progress(min(max(pct / 100.0, 0.0), 1.0))
         st.caption(f"정답률 {pct:.0f}%")
         st.write("")
-    # ============================================================
-    # ✅ 자주 틀린 단어 TOP10 (최근 50회 기준)
-    # ============================================================
-    st.divider()
-    st.markdown("### ❌ 자주 틀린 단어 TOP10 (최근 50회)")
-
-    # quiz_attempts의 wrong_list를 펼쳐서 단어별로 카운트
-    counter = Counter()
-
-    # res.data 원본에 wrong_list가 들어있음 (hist는 일부 컬럼만 쓰고 있어서 res.data를 사용)
-    for row in (res.data or []):
-        wl = row.get("wrong_list") or []
-        if isinstance(wl, list):
-            for w in wl:
-                # w는 {"단어": "...", ...} 형태로 저장되어 있음
-                word = str(w.get("단어", "")).strip()
-                if word:
-                    counter[word] += 1
-
-    if not counter:
-        st.caption("아직 오답 데이터가 충분하지 않습니다. 몇 번 더 풀면 TOP10이 생겨요 🙂")
-        return
-
-    top10 = counter.most_common(10)
-
-    # 화면 표시용 테이블
-    df_top = pd.DataFrame(top10, columns=["단어", "오답횟수"])
-    st.dataframe(df_top, use_container_width=True, hide_index=True)
-
-    # 시험 보기 버튼
-    if st.button(
-        "❌ 이 TOP10으로 시험 보기",
-        type="primary",
-        use_container_width=True,
-        key="btn_quiz_from_top10",
-    ):
-        clear_question_widget_keys()
-
-        # build_quiz_from_wrongs가 기대하는 형태: [{"단어": "..."} , ...]
-        weak_wrong_list = [{"단어": w} for w, _ in top10]
-
-        retry_quiz = build_quiz_from_wrongs(
-            weak_wrong_list,
-            st.session_state.quiz_type,
-        )
-
-        start_quiz_state(retry_quiz, st.session_state.quiz_type, clear_wrongs=True)
-        st.session_state["_scroll_top_once"] = True
-        st.session_state.page = "quiz"
-        st.rerun()
 
 # ============================================================
 # ✅ 상단 헤더 (페이지/버튼)
