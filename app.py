@@ -1367,8 +1367,8 @@ if st.session_state.submitted:
 
         try:
             res = run_db(_fetch_hist)
-            if not res.data:
-                st.info("아직 저장된 기록이 없습니다. 문제를 풀고 제출하면 기록이 쌓여요.")
+                if not res.data:
+                    st.info("아직 저장된 기록이 없습니다. 문제를 풀고 제출하면 기록이 쌓여요.")
             else:
                 hist = pd.DataFrame(res.data).copy()
                 hist["created_at"] = to_kst_naive(hist["created_at"])
