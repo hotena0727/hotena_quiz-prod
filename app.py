@@ -30,11 +30,11 @@ label[data-baseweb="radio"] * {
 
 st.title("い형용사 퀴즈")
 st.markdown('<div id="__TOP__"></div>', unsafe_allow_html=True)
-def scroll_to_top(key="scroll_top"):
+def scroll_to_top(nonce: int = 0):
     components.html(
-        """
+        f"""
         <script>
-        (function () {
+        (function () {{
           const doc = window.parent.document;
 
           const targets = [
@@ -45,20 +45,20 @@ def scroll_to_top(key="scroll_top"):
             doc.body
           ].filter(Boolean);
 
-          const go = () => {
-            try {
+          const go = () => {{
+            try {{
               const top = doc.getElementById("__TOP__");
-              if (top) top.scrollIntoView({behavior: "auto", block: "start"});
+              if (top) top.scrollIntoView({{behavior: "auto", block: "start"}});
 
-              targets.forEach(t => {
-                if (t && typeof t.scrollTo === "function") t.scrollTo({top: 0, left: 0, behavior: "auto"});
+              targets.forEach(t => {{
+                if (t && typeof t.scrollTo === "function") t.scrollTo({{top: 0, left: 0, behavior: "auto"}});
                 if (t) t.scrollTop = 0;
-              });
+              }});
 
               window.parent.scrollTo(0, 0);
               window.scrollTo(0, 0);
-            } catch(e) {}
-          };
+            }} catch(e) {{}}
+          }};
 
           go();
           requestAnimationFrame(go);
@@ -66,19 +66,20 @@ def scroll_to_top(key="scroll_top"):
           setTimeout(go, 150);
           setTimeout(go, 350);
           setTimeout(go, 800);
-        })();
+        }})();
         </script>
+        <!-- nonce:{nonce} -->
         """,
-        height=1,  # 0이 아니라 1로 두면 iframe 마운트가 더 안정적입니다
-        key=key,
+        height=1,
     )
+
 
 
 # ✅ 버튼 클릭 후 rerun되면, 이 플래그를 보고 최상단 스크롤 실행
 if st.session_state.get("_scroll_top_once"):
     st.session_state["_scroll_top_once"] = False
-    st.session_state["_scroll_top_key"] = st.session_state.get("_scroll_top_key", 0) + 1
-    scroll_to_top(key=f"scroll_top_{st.session_state['_scroll_top_key']}")
+    st.session_state["_scroll_top_nonce"] = st.session_state.get("_scroll_top_nonce", 0) + 1
+    scroll_to_top(nonce=st.session_state["_scroll_top_nonce"])
 
 # ============================================================
 # ✅ Cookies
