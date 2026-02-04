@@ -144,6 +144,64 @@ QUIZ_TYPES_USER = ["reading", "meaning", "kr2jp"]                 # 일반 유�
 QUIZ_TYPES_ADMIN = ["reading", "meaning", "kr2jp"]       # 관리자만 3종
 
 # ============================================================
+# ✅ (추가) 어디 페이지에서든 pool/pool_i를 보장하는 Lazy Loader
+# ============================================================
+READ_KW = dict(
+    dtype=str,
+    keep_default_na=False,
+    na_values=["nan", "NaN", "NULL", "null", "None", "none"],
+)
+
+@st.cache_data(show_spinner=False)
+def _load_pools_cached(csv_path_str: str, level: str):
+    df = pd.read_csv(csv_path_str, **READ_KW)
+    if len(df.columns) == 1 and "\t" in df.columns[0]:
+        df = pd.read_csv(csv_path_str, sep="\t", **READ_KW)
+
+    df.columns = df.columns.astype(str).str.replace("\ufeff", "", regex=False).str.strip()
+
+    required_cols = ["jp_word", "reading", "meaning", "level", "pos"]
+    missing = [c for c in required_cols if c not in df.columns]
+    if missing:
+        raise ValueError(f"CSV 컬럼이 부족합니다: {missing}")
+
+    for c in required_cols:
+        df[c] = df[c].astype(str).str.strip()
+        df[c] = df[c].replace({"nan": "", "NaN": "", "NULL": "", "null": "", "None": "", "none": ""})
+
+    df = df[(df["reading"] != "") & (df["meaning"] != "") & (df["level"] != "") & (df["pos"] != "")].copy()
+
+    pool = df[df["level"] == level].copy()
+    pool_i = pool[pool["pos"] == "i_adj"].copy()
+
+    pool_i_reading = pool_i[pool_i["jp_word"].notna() & (pool_i["jp_word"].astype(str).str.strip() != "")].copy()
+    pool_i_meaning = pool_i.copy()
+
+    return pool, pool_i, pool_i_reading, pool_i_meaning
+
+
+def ensure_pools_ready():
+    global pool, pool_i, pool_i_reading, pool_i_meaning
+
+    if st.session_state.get("pool_ready"):
+        return
+
+    BASE_DIR = Path(__file__).resolve().parent
+    CSV_PATH = BASE_DIR / "data" / "words_adj_300.csv"
+
+    try:
+        pool, pool_i, pool_i_reading, pool_i_meaning = _load_pools_cached(str(CSV_PATH), LEVEL)
+    except Exception as e:
+        st.error(f"단어 데이터 로드 실패: {e}")
+        st.stop()
+
+    if len(pool_i) < N:
+        st.error(f"い형용사 단어가 부족합니다: pool={len(pool_i)}")
+        st.stop()
+
+    st.session_state["pool_ready"] = True
+
+# ============================================================
 # ✅ mastered_words를 유형별로 유지하는 유틸
 # ============================================================
 def ensure_mastered_words_shape():
@@ -896,14 +954,29 @@ def render_admin_dashboard():
 
     st.markdown('<div class="weak-wrap">', unsafe_allow_html=True)
 
+    counter = Counter()
+    for row in (res.data or []):
+        wl = row.get("wrong_list") or []
+        if isinstance(wl, list):
+            for w in wl:
+                word = str(w.get("단어", "")).strip()
+                if word:
+                    counter[word] += 1
+
+    top10 = counter.most_common(10)
+
+    if not top10:
+        st.info("오답 데이터가 없습니다.")
+        return
+
     for idx, (word, cnt) in enumerate(top10, start=1):
         st.markdown(
             f"""
-    <div class="weak-card">
-      <div class="weak-word">{idx}. {word}</div>
-      <div class="weak-badge">오답 {cnt}회</div>
-    </div>
-    """,
+            <div class="weak-card">
+              <div class="weak-word">{idx}. {word}</div>
+              <div class="weak-badge">오답 {cnt}회</div>
+            </div>
+            """,
             unsafe_allow_html=True,
         )
 
@@ -1249,53 +1322,7 @@ if st.session_state.page == "my":
     render_my_dashboard()
     st.stop()
 
-# ============================================================
-# ✅ CSV 로드 (nan 방지 최종형)
-# ============================================================
-BASE_DIR = Path(__file__).resolve().parent
-CSV_PATH = BASE_DIR / "data" / "words_adj_300.csv"
-
-READ_KW = dict(
-    dtype=str,
-    keep_default_na=False,
-    na_values=["nan", "NaN", "NULL", "null", "None", "none"],
-)
-
-df = pd.read_csv(CSV_PATH, **READ_KW)
-if len(df.columns) == 1 and "\t" in df.columns[0]:
-    df = pd.read_csv(CSV_PATH, sep="\t", **READ_KW)
-
-df.columns = df.columns.astype(str).str.replace("\ufeff", "", regex=False).str.strip()
-
-required_cols = ["jp_word", "reading", "meaning", "level", "pos"]
-missing = [c for c in required_cols if c not in df.columns]
-if missing:
-    st.error(f"CSV 컬럼이 부족합니다: {missing}")
-    st.stop()
-
-for c in required_cols:
-    df[c] = df[c].astype(str).str.strip()
-    df[c] = df[c].replace({"nan": "", "NaN": "", "NULL": "", "null": "", "None": "", "none": ""})
-
-df = df[
-    (df["reading"] != "")
-    & (df["meaning"] != "")
-    & (df["level"] != "")
-    & (df["pos"] != "")
-].copy()
-
-pool = df[df["level"] == LEVEL].copy()
-pool_i = pool[pool["pos"] == "i_adj"].copy()
-
-pool_i_reading = pool_i[
-    pool_i["jp_word"].notna() & (pool_i["jp_word"].astype(str).str.strip() != "")
-].copy()
-
-pool_i_meaning = pool_i.copy()
-
-if len(pool_i) < N:
-    st.error(f"い형용사 단어가 부족합니다: pool={len(pool_i)}")
-    st.stop()
+ensure_pools_ready()
 
 # ============================================================
 # ✅ 퀴즈 로직
@@ -1356,6 +1383,8 @@ def make_question(row: pd.Series, qtype: str, base_pool_i: pd.DataFrame, distrac
     }
 
 def build_quiz_from_wrongs(wrong_list: list, qtype: str) -> list:
+    ensure_pools_ready()   # ✅ 추가: my 페이지에서도 pool_i가 존재하게 보장
+
     wrong_words = []
     for w in (wrong_list or []):
         key = str(w.get("단어", "")).strip()
@@ -1378,8 +1407,10 @@ def build_quiz_from_wrongs(wrong_list: list, qtype: str) -> list:
 
     retry_df = retry_df.sample(frac=1).reset_index(drop=True)
     return [make_question(retry_df.iloc[i], qtype, pool_i, pool) for i in range(len(retry_df))]
-
+    
 def build_quiz(qtype: str) -> list:
+    ensure_pools_ready()  # ✅ 추가
+    
     if qtype == "reading":
         base_pool = pool_i_reading
     elif qtype == "meaning":
@@ -1727,10 +1758,10 @@ if st.session_state.submitted:
     show_post_ui = (SHOW_POST_SUBMIT_UI == "Y") or is_admin()
 
     if show_post_ui and st.session_state.wrong_list:
-      st.subheader("❌ 오답 노트")
+        st.subheader("❌ 오답 노트")
 
-    st.markdown(
-        """
+        st.markdown(
+            """
 <style>
 .wrong-card{
   border: 1px solid rgba(120,120,120,0.25);
@@ -1770,21 +1801,25 @@ if st.session_state.submitted:
 .ans-k{ opacity: 0.7; font-weight: 700; }
 </style>
 """,
-        unsafe_allow_html=True,
-    )
+            unsafe_allow_html=True,
+        )
 
-    for w in st.session_state.wrong_list:
-        no = w.get("No", "")
-        qtext = w.get("문제", "")
-        picked = w.get("내 답", "")
-        correct = w.get("정답", "")
-        word = w.get("단어", "")
-        reading = w.get("읽기", "")
-        meaning = w.get("뜻", "")
-        mode = quiz_label_map.get(w.get("유형", ""), w.get("유형", ""))
+        def _s(v):
+            return "" if v is None else str(v)
 
-        st.markdown(
-            f"""
+        # ✅ 카드 렌더링 (오답마다 1장)
+        for w in st.session_state.wrong_list:
+            no = _s(w.get("No"))
+            qtext = _s(w.get("문제"))
+            picked = _s(w.get("내 답"))
+            correct = _s(w.get("정답"))
+            word = _s(w.get("단어"))
+            reading = _s(w.get("읽기"))
+            meaning = _s(w.get("뜻"))
+            mode = quiz_label_map.get(w.get("유형"), w.get("유형", ""))
+
+            st.markdown(
+                f"""
 <div class="wrong-card">
   <div class="wrong-top">
     <div>
@@ -1800,11 +1835,10 @@ if st.session_state.submitted:
   <div class="ans-row"><div class="ans-k">뜻</div><div>{meaning}</div></div>
 </div>
 """,
-            unsafe_allow_html=True,
-        )
+                unsafe_allow_html=True,
+            )
 
-    # ✅✅✅ 오답노트 "다음"에 오답만 다시 풀기 버튼 배치
-    # 일반 유저에게 숨기고 싶으면 is_admin() 유지 / 보이게 하고 싶으면 조건 제거
+        # ✅ 버튼은 "오답노트 전체" 아래에 1번만
         if st.button(
             "❌ 틀린 문제만 다시 풀기",
             type="primary",
@@ -1820,30 +1854,20 @@ if st.session_state.submitted:
             st.session_state["_scroll_top_once"] = True
             st.rerun()
 
-    # ============================================================
-    # ✅ 하단: 새 문제 버튼(제출 버튼 느낌)
-    # ============================================================
-    st.divider()
+        st.divider()
 
-    if st.button(
-        "✅ 다음 10문항 시작하기",
-        type="primary",
-        use_container_width=True,
-        key="btn_next_10",  # ✅ key는 이런 식으로!
-    ):
-        clear_question_widget_keys()
-        new_quiz = build_quiz(st.session_state.quiz_type)
-        start_quiz_state(new_quiz, st.session_state.quiz_type, clear_wrongs=True)
-
-        st.session_state["_scroll_top_once"] = True  # ✅ 이 줄이 핵심
-        
-        # (선택) 진행중 저장(progress)도 같이 비우고 싶으면 아래 3줄 활성화
-        # sb_authed_local2 = get_authed_sb()
-        # if sb_authed_local2 is not None:
-        #     clear_progress_in_db(sb_authed_local2, user_id)
-
-        st.rerun()
-        
+        if st.button(
+            "✅ 다음 10문항 시작하기",
+            type="primary",
+            use_container_width=True,
+            key="btn_next_10",
+        ):
+            clear_question_widget_keys()
+            new_quiz = build_quiz(st.session_state.quiz_type)
+            start_quiz_state(new_quiz, st.session_state.quiz_type, clear_wrongs=True)
+            st.session_state["_scroll_top_once"] = True
+            st.rerun()
+     
     show_naver_talk = (SHOW_NAVER_TALK == "N") or is_admin()
         
     if show_naver_talk:
