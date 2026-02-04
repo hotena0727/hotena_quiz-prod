@@ -955,6 +955,19 @@ def render_my_dashboard():
     c3.metric("최근 점수", f"{last_score} / {last_total}")
 
     st.divider()
+    c1, c2, c3 = st.columns([6, 2, 2])
+
+    with c1:
+        st.caption("")
+
+    with c3:
+    if st.button("로그아웃", use_container_width=True, key="btn_logout_bottom"):
+        try:
+            sb.auth.sign_out()
+        except Exception:
+            pass
+        clear_auth_everywhere()
+        st.rerun()
 
     # ============================================================
     # ✅ 자주 틀린 단어 TOP10 (최근 50회 기준) - A안(카드+진행바)
@@ -1209,7 +1222,7 @@ def render_my_dashboard():
 if "page" not in st.session_state:
     st.session_state.page = "quiz"
 
-colA, colB, colC, colD = st.columns([7, 3, 2, 3])
+colA, colB, colC = st.columns([7, 3, 2])
 
 with colA:
     st.caption("환영합니다 🙂")
@@ -1224,16 +1237,6 @@ with colC:
         if st.button("📊 관리자", use_container_width=True, key="btn_go_admin"):
             st.session_state.page = "admin"
             st.rerun()
-
-with colD:
-    if st.button("🚪 로그아웃", use_container_width=True, key="btn_logout"):
-        try:
-            sb.auth.sign_out()
-        except Exception:
-            pass
-        clear_auth_everywhere()
-        st.rerun()
-
 # ============================================================
 # ✅ 라우팅
 # ============================================================
