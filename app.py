@@ -16,20 +16,23 @@ st.set_page_config(page_title="JLPT Quiz", layout="centered")
 st.markdown(
     """
 <style>
-/* Cloud 하단 footer(로고/메뉴) 계열: 버전마다 testid가 달라서 전부 잡기 */
+/* Streamlit 내부 footer/하단 영역 */
 footer {display:none !important;}
 [data-testid="stFooter"] {display:none !important;}
 [data-testid="stAppFooter"] {display:none !important;}
-[class*="viewerBadge_container"] {display:none !important;}   /* 우하단 뱃지 계열 */
-[class*="viewerBadge_link"] {display:none !important;}
+[data-testid="stBottom"] {display:none !important;}
+
+/* Cloud 뱃지/배너 계열(버전에 따라 클래스명이 바뀜) */
+[class*="viewerBadge"] {display:none !important;}
+[class*="streamlitBadge"] {display:none !important;}
+a[href*="streamlit.io"] {display:none !important;}
+a[href*="streamlitapp.com"] {display:none !important;}
 
 /* 우상단 메뉴/툴바 */
 #MainMenu {display:none !important;}
 [data-testid="stMainMenu"] {display:none !important;}
 [data-testid="stToolbar"] {display:none !important;}
 [data-testid="stStatusWidget"] {display:none !important;}
-
-/* 상단 여백(장식선) */
 [data-testid="stDecoration"] {display:none !important;}
 </style>
 """,
@@ -119,33 +122,42 @@ def render_floating_scroll_top():
 <script>
 (function(){
   const doc = window.parent.document;
-
-  // 중복 방지
   if (doc.getElementById("__FAB_TOP__")) return;
 
   const btn = doc.createElement("button");
   btn.id = "__FAB_TOP__";
-  btn.textContent = "↑";
+  btn.type = "button";
+  btn.setAttribute("aria-label", "맨 위로");
+  btn.innerHTML = `
+    <span style="
+      display:flex;align-items:center;justify-content:center;
+      width:100%;height:100%;
+      font-size:18px;line-height:1;
+    ">⌃</span>
+  `;
 
-  // 기본 스타일
+  // ✅ 더 예쁜 스타일
   btn.style.position = "fixed";
   btn.style.right = "14px";
   btn.style.zIndex = "2147483647";
   btn.style.width = "46px";
   btn.style.height = "46px";
   btn.style.borderRadius = "999px";
-  btn.style.border = "1px solid rgba(120,120,120,0.25)";
-  btn.style.background = "rgba(0,0,0,0.55)";
+  btn.style.border = "1px solid rgba(255,255,255,0.18)";
+  btn.style.background = "rgba(20,20,20,0.55)";
+  btn.style.backdropFilter = "blur(8px)";
+  btn.style.webkitBackdropFilter = "blur(8px)";
   btn.style.color = "#fff";
-  btn.style.fontSize = "18px";
   btn.style.fontWeight = "900";
-  btn.style.boxShadow = "0 10px 22px rgba(0,0,0,0.25)";
+  btn.style.boxShadow = "0 10px 26px rgba(0,0,0,0.28)";
   btn.style.cursor = "pointer";
   btn.style.userSelect = "none";
   btn.style.display = "flex";
   btn.style.alignItems = "center";
   btn.style.justifyContent = "center";
-  btn.style.opacity = "0"; // 위치 잡힌 후 표시
+  btn.style.opacity = "0";
+  btn.style.transform = "translateY(6px)";
+  btn.style.transition = "opacity .18s ease, transform .18s ease";
 
   const goTop = () => {
     try {
@@ -172,12 +184,18 @@ def render_floating_scroll_top():
 
   btn.addEventListener("click", goTop);
 
-  // ✅ 버튼을 body가 아니라 stAppViewContainer에 붙이면 "가려짐"이 확 줄어듦
+  // 눌림 효과
+  btn.addEventListener("touchstart", () => { btn.style.transform = "scale(0.96)"; }, {passive:true});
+  btn.addEventListener("touchend",   () => { btn.style.transform = "scale(1)"; }, {passive:true});
+  btn.addEventListener("mousedown",  () => { btn.style.transform = "scale(0.96)"; });
+  btn.addEventListener("mouseup",    () => { btn.style.transform = "scale(1)"; });
+
+  // ✅ body 말고 stAppViewContainer에 붙임
   const mount = () => doc.querySelector('[data-testid="stAppViewContainer"]') || doc.body;
 
-  // ✅ 하단바 가림 보정
-  const BASE = 18;     // 기본 여백
-  const EXTRA = 34;   // 선우님이 올리고/내리는 값(더 올리려면 160~220)
+  // ✅ 하단 가림 보정 (여기만 조절하면 됨)
+  const BASE = 18;
+  const EXTRA = 34;   // ← “더 위로” 올리고 싶으면 140~200
 
   const reposition = () => {
     try {
@@ -187,18 +205,20 @@ def render_floating_scroll_top():
 
       const bottomPx = BASE + EXTRA + hiddenBottom;
       btn.style.bottom = bottomPx + "px";
+
       btn.style.opacity = "1";
+      btn.style.transform = "translateY(0)";
     } catch(e) {
-      btn.style.bottom = "180px";
+      btn.style.bottom = "160px";
       btn.style.opacity = "1";
+      btn.style.transform = "translateY(0)";
     }
   };
 
-  // ✅ DOM 아직 준비 안 된 경우를 대비해서 "붙이기"를 재시도
   const tryAttach = (n=0) => {
     const root = mount();
     if (!root) {
-      if (n < 30) return setTimeout(() => tryAttach(n+1), 50);
+      if (n < 40) return setTimeout(() => tryAttach(n+1), 50);
       return;
     }
     root.appendChild(btn);
@@ -211,8 +231,6 @@ def render_floating_scroll_top():
   tryAttach();
 
   window.parent.addEventListener("resize", reposition, {passive:true});
-  window.parent.addEventListener("scroll", reposition, {passive:true});
-
   const vv = window.parent.visualViewport || window.visualViewport;
   if (vv) {
     vv.addEventListener("resize", reposition, {passive:true});
@@ -223,7 +241,6 @@ def render_floating_scroll_top():
         """,
         height=1,
     )
-
 
 render_floating_scroll_top()
 
