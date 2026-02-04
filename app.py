@@ -989,7 +989,7 @@ def render_my_dashboard():
   border: 1px solid rgba(120,120,120,0.20);
   border-radius: 16px;
   padding: 12px 14px;
-  margin-bottom: 12px;  /* ✅ 카드 사이 간격 */
+  margin-bottom: 10px;  /* ✅ 카드 사이 간격 */
   background: rgba(255,255,255,0.02);
 }
 .weak-row{
