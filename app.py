@@ -1441,5 +1441,5 @@ if st.session_state.submitted:
         
         show_naver_talk = (SHOW_NAVER_TALK == "Y") or is_admin()
         
-        if show_naver_talk:
-          render_naver_talk()
+if show_naver_talk:
+    render_naver_talk()
