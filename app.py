@@ -44,7 +44,6 @@ label[data-baseweb="radio"] * {
 """, unsafe_allow_html=True)
 
 st.title("い형용사 퀴즈")
-render_floating_scroll_top()
 st.markdown('<div id="__TOP__"></div>', unsafe_allow_html=True)
 def scroll_to_top(nonce: int = 0):
     components.html(
@@ -144,8 +143,6 @@ def render_floating_scroll_top():
 """,
         height=0,
     )
-
-
 
 # ✅ 버튼 클릭 후 rerun되면, 이 플래그를 보고 최상단 스크롤 실행
 if st.session_state.get("_scroll_top_once"):
