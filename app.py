@@ -1493,14 +1493,14 @@ if st.session_state.submitted:
     if show_post_ui:
         st.subheader("📊 누적 학습 현황 (이번 세션)")
 
-    total_attempts = sum(x["total"] for x in st.session_state.history) if st.session_state.history else 0
-    total_score = sum(x["score"] for x in st.session_state.history) if st.session_state.history else 0
-    acc = (total_score / total_attempts) if total_attempts else 0
+        total_attempts = sum(x["total"] for x in st.session_state.history) if st.session_state.history else 0
+        total_score = sum(x["score"] for x in st.session_state.history) if st.session_state.history else 0
+        acc = (total_score / total_attempts) if total_attempts else 0
 
-    c1, c2, c3 = st.columns(3)
-    c1.metric("누적 회차", len(st.session_state.history))
-    c2.metric("누적 점수", f"{total_score} / {total_attempts}")
-    c3.metric("누적 정답률", f"{acc*100:.0f}%")
+        c1, c2, c3 = st.columns(3)
+        c1.metric("누적 회차", len(st.session_state.history))
+        c2.metric("누적 점수", f"{total_score} / {total_attempts}")
+        c3.metric("누적 정답률", f"{acc*100:.0f}%")
 
     if st.session_state.wrong_counter:
         st.markdown("#### ❌ 자주 틀리는 단어 TOP 5")
