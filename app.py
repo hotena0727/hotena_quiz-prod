@@ -1517,7 +1517,7 @@ st.markdown("""
 <style>
 /* 출제유형(헤더) 아래 여백 줄이기 */
 .quiztype-title{
-  margin: 0 0 6px 0 !important;   /* 아래 6px만 */
+  margin: 0 0 1px 0 !important;   /* 아래 6px만 */
   padding: 0 !important;
   font-weight: 800;
 }
