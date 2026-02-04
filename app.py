@@ -183,7 +183,16 @@ def _load_pools_cached(csv_path_str: str, level: str):
 def ensure_pools_ready():
     global pool, pool_i, pool_i_reading, pool_i_meaning
 
-    if st.session_state.get("pool_ready"):
+    # ✅ Streamlit rerun에서는 globals가 초기화될 수 있음.
+    #    session_state.pool_ready만 믿고 return하면 pool_i가 없는 상태가 생김.
+    ready_flag = bool(st.session_state.get("pool_ready"))
+
+    globals_ok = all(
+        (name in globals()) and (globals().get(name) is not None)
+        for name in ("pool", "pool_i", "pool_i_reading", "pool_i_meaning")
+    )
+
+    if ready_flag and globals_ok:
         return
 
     BASE_DIR = Path(__file__).resolve().parent
@@ -313,6 +322,7 @@ def clear_auth_everywhere():
         "session_stats_applied_this_attempt",
         "mastered_words",
         "progress_restored",
+        "pool_ready",   # ✅ 추가
     ]:
         st.session_state.pop(k, None)
 
