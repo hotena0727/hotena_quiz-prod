@@ -961,13 +961,13 @@ def render_my_dashboard():
         st.caption("")
 
     with c3:
-    if st.button("로그아웃", use_container_width=True, key="btn_logout_bottom"):
-        try:
-            sb.auth.sign_out()
-        except Exception:
-            pass
-        clear_auth_everywhere()
-        st.rerun()
+        if st.button("로그아웃", use_container_width=True, key="btn_logout_bottom"):
+            try:
+                sb.auth.sign_out()
+            except Exception:
+                pass
+            clear_auth_everywhere()
+            st.rerun()
 
     # ============================================================
     # ✅ 자주 틀린 단어 TOP10 (최근 50회 기준) - A안(카드+진행바)
