@@ -1339,6 +1339,30 @@ def load_word_pools(csv_path: str, level: str, n: int):
 
     return pool, pool_i, pool_i_reading, pool_i_meaning
 
+
+def ensure_pools():
+    """
+    ✅ 어떤 페이지(my/admin/quiz)에서든 필요하면 여기서 풀을 보장한다.
+    """
+    if "_pools_ready" in st.session_state and st.session_state["_pools_ready"]:
+        return
+
+    BASE_DIR = Path(__file__).resolve().parent
+    csv_path = str(BASE_DIR / "data" / "words_adj_300.csv")
+
+    try:
+        pool, pool_i, pool_i_reading, pool_i_meaning = load_word_pools(csv_path, LEVEL, N)
+    except Exception as e:
+        st.error(f"단어 데이터 로드 실패: {e}")
+        st.stop()
+
+    # 전역처럼 쓰고 있던 변수들을 session_state에 고정 저장
+    st.session_state["_pool"] = pool
+    st.session_state["_pool_i"] = pool_i
+    st.session_state["_pool_i_reading"] = pool_i_reading
+    st.session_state["_pool_i_meaning"] = pool_i_meaning
+    st.session_state["_pools_ready"] = True
+
 # ============================================================
 # ✅ 퀴즈 로직
 # ============================================================
@@ -1398,6 +1422,12 @@ def make_question(row: pd.Series, qtype: str, base_pool_i: pd.DataFrame, distrac
     }
 
 def build_quiz_from_wrongs(wrong_list: list, qtype: str) -> list:
+    ensure_pools()
+    pool = st.session_state["_pool"]
+    pool_i = st.session_state["_pool_i"]
+    # 필요하면 pool_i_reading/meaning도 꺼내 쓸 수 있음
+    # pool_i_reading = st.session_state["_pool_i_reading"]
+    # pool_i_meaning  = st.session_state["_pool_i_meaning"]
     wrong_words = []
     for w in (wrong_list or []):
         key = str(w.get("단어", "")).strip()
