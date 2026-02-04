@@ -1375,7 +1375,21 @@ def render_my_dashboard():
 if "page" not in st.session_state:
     st.session_state.page = "quiz"
 
-colA, colB, colC, colD = st.columns([7, 3, 2, 3])
+# 🔽 상단 근처(버튼 만들기 전에) CSS 한 번만
+st.markdown("""
+<style>
+/* 로그아웃 버튼만 작게 */
+div.stButton > button.logout-mini {
+  padding: 4px 8px !important;
+  font-size: 12px !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# ✅ 상단 헤더 (페이지/버튼)
+colA, colB, colC, colD, colE = st.columns([7, 3, 2, 1.2, 1])  # 맨 오른쪽을 더 작게
 
 with colA:
     st.caption("환영합니다 🙂")
@@ -1391,14 +1405,28 @@ with colC:
             st.session_state.page = "admin"
             st.rerun()
 
+# ✅ (선택) 빈칸 spacer 느낌
 with colD:
-    if st.button("🚪 로그아웃", use_container_width=True, key="btn_logout"):
+    st.write("")
+
+# ✅ 로그아웃: 맨 우측 최상단 + 작게
+with colE:
+    # 버튼을 작게 보이게 하려면 use_container_width=False가 더 잘 먹습니다.
+    # 라벨은 아이콘만 두는 걸 추천.
+    clicked = st.button("🚪", key="btn_logout", help="로그아웃", use_container_width=False)
+
+    # 버튼에 class를 붙이기 어렵기 때문에,
+    # 위에서 '전체 버튼' 스타일을 이미 작게 잡아둔 상태라면 여기만으로도 충분합니다.
+    # (만약 전체 버튼을 건드리기 싫다면 2번 방식으로 가는게 더 확실)
+
+    if clicked:
         try:
             sb.auth.sign_out()
         except Exception:
             pass
         clear_auth_everywhere()
         st.rerun()
+
 
 # ============================================================
 # ✅ 라우팅
