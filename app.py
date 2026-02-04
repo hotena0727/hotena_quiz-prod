@@ -982,7 +982,7 @@ def render_my_dashboard():
 .weak-wrap{
   display:flex;
   flex-direction:column;
-  gap:16px;
+  gap:20px;
   margin-top:10px;
 }
 .weak-card{
