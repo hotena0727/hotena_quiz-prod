@@ -30,11 +30,29 @@ label[data-baseweb="radio"] * {
 
 st.title("い형용사 퀴즈")
 def scroll_to_top():
-    # Streamlit 앱 최상단으로 스크롤
     components.html(
         """
         <script>
-        window.parent.scrollTo(0, 0);
+        (function() {
+          // Streamlit은 rerun 직후 DOM이 늦게 잡히는 경우가 있어 약간 지연해서 여러 번 시도
+          const go = () => {
+            try {
+              // 일반 스크롤
+              window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+              // 혹시 iframe 구조면 parent도 시도(가능한 경우만)
+              if (window.parent && window.parent !== window) {
+                window.parent.scrollTo({ top: 0, left: 0, behavior: "instant" });
+              }
+              // 문서 루트도 한번 더
+              document.documentElement.scrollTop = 0;
+              document.body.scrollTop = 0;
+            } catch (e) {}
+          };
+          go();
+          setTimeout(go, 60);
+          setTimeout(go, 180);
+          setTimeout(go, 420);
+        })();
         </script>
         """,
         height=0,
