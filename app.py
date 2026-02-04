@@ -1610,9 +1610,11 @@ if st.session_state.submitted:
         #    (일반 유저에게는 숨기려면 아래 if 조건을 조절)
         if is_admin():  # ✅ 관리자에게만 보이게 (원하는 정책이면 이대로)
             if st.button("❌ 틀린 문제만 다시 풀기", type="primary", use_container_width=True, key="btn_retry_wrongs_bottom"):
-                clear_question_widget_keys()
-                retry_quiz = build_quiz_from_wrongs(st.session_state.wrong_list, st.session_state.quiz_type)
-                start_quiz_state(retry_quiz, st.session_state.quiz_type, clear_wrongs=True)
+              clear_question_widget_keys()
+              retry_quiz = build_quiz_from_wrongs(st.session_state.wrong_list, st.session_state.quiz_type)
+              start_quiz_state(retry_quiz, st.session_state.quiz_type, clear_wrongs=True)
+              st.session_state["_scroll_top_once"] = True
+              st.rerun()
     
                 # (선택) 진행저장(progress)도 새 퀴즈로 덮어쓰기 원하면 저장 호출
                 # sb_authed_local2 = get_authed_sb()
