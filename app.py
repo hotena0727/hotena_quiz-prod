@@ -121,7 +121,7 @@ sb = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 # ============================================================
 # ✅ 상수/설정
 # ============================================================
-SHOW_POST_SUBMIT_UI = "Y"   # "Y"면 제출 후 상세(통계/기록/오답노트/누적현황) 표시
+SHOW_POST_SUBMIT_UI = "N"   # "Y"면 제출 후 상세(통계/기록/오답노트/누적현황) 표시
 SHOW_NAVER_TALK = "Y"    
 NAVER_TALK_URL = "https://talk.naver.com/W45141"
 APP_URL = "https://hotenaquiztestapp-5wiha4zfuvtnq4qgxdhq72.streamlit.app/"
