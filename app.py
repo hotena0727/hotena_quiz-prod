@@ -1397,23 +1397,34 @@ if st.session_state.submitted:
                     st.write(str(e))
 
         if not st.session_state.stats_saved_this_attempt:
-            def _save_stats():
+            def _save_stats_bulk():
+                # (중요) 위젯 값이 answers와 100% 동기화되게
                 sync_answers_from_widgets()
-                return save_word_stats_via_rpc(
-                    sb_authed=sb_authed_local,
+
+                items = build_word_results_bulk_payload(
                     quiz=st.session_state.quiz,
                     answers=st.session_state.answers,
                     quiz_type=current_type,
                     level=LEVEL,
                 )
+
+                if not items:
+                    return None
+
+                # ✅ RPC 1번 호출로 끝
+                return sb_authed_local.rpc(
+                    "record_word_results_bulk",
+                    {"p_items": items},
+                ).execute()
+
             try:
-                run_db(_save_stats)
+                run_db(_save_stats_bulk)
                 st.session_state.stats_saved_this_attempt = True
                 if show_post_ui:
-                    st.success("✅ 단어 통계 저장 성공")
+                    st.success("✅ 단어 통계(bulk) 저장 성공")
             except Exception as e:
                 if show_post_ui:
-                    st.error("❌ 단어 통계 저장 실패 (아래 에러가 진짜 원인입니다)")
+                    st.error("❌ 단어 통계(bulk) 저장 실패 (아래 에러가 진짜 원인입니다)")
                     st.exception(e)
 
         # ✅ 아래는 전부 "보여주기"에 해당하므로 show_post_ui로 한번에 묶기
