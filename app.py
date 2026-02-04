@@ -1565,9 +1565,9 @@ if st.session_state.submitted:
                 st.session_state["_scroll_top_once"] = True
                 st.rerun()
 
-if show_post_ui:
-    st.divider()
-    st.subheader("📊 누적 학습 현황 (이번 세션)")
+    if show_post_ui:
+        st.divider()
+        st.subheader("📊 누적 학습 현황 (이번 세션)")
 
         total_attempts = sum(x["total"] for x in st.session_state.history) if st.session_state.history else 0
         total_score = sum(x["score"] for x in st.session_state.history) if st.session_state.history else 0
