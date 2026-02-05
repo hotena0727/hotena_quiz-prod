@@ -338,6 +338,23 @@ def ensure_mastered_words_shape():
     if "mastered_words" not in st.session_state or not isinstance(st.session_state.mastered_words, dict):
         st.session_state.mastered_words = {}
 
+    types = QUIZ_TYPES_ADMIN if is_admin() else QUIZ_TYPES_USER
+    for k in types:
+        st.session_state.mastered_words.setdefault(k, set())
+
+
+# ✅✅✅ [추가] "완벽합니다" 메시지를 유형별로 1번만 띄우기 위한 플래그
+def ensure_mastery_banner_shape():
+    if "mastery_banner_shown" not in st.session_state or not isinstance(st.session_state.mastery_banner_shown, dict):
+        st.session_state.mastery_banner_shown = {}
+
+    types = QUIZ_TYPES_ADMIN if is_admin() else QUIZ_TYPES_USER
+    for t in types:
+        st.session_state.mastery_banner_shown.setdefault(t, False)
+
+    if "mastered_words" not in st.session_state or not isinstance(st.session_state.mastered_words, dict):
+        st.session_state.mastered_words = {}
+
     # ✅ get_available_quiz_types()를 여기서 부르지 말고(순서 꼬임 방지),
     #    is_admin() 기준으로 직접 결정
     types = QUIZ_TYPES_ADMIN if is_admin() else QUIZ_TYPES_USER
@@ -1565,27 +1582,50 @@ def build_quiz(qtype: str) -> list:
 
     if len(base_pool) < N:
         if len(base_pool) == 0:
-            st.success("완벽합니다. 드디어 모두 정복했어요 ✅")
-            st.info("복습/재도전을 원하시면 아래 버튼으로 **현재 유형만** 바로 재시작 할 수 있어요.")
+            ensure_mastery_banner_shape()
+    
+            # ✅ 유형별로 '한 번만' 보여주기
+            already = bool(st.session_state.mastery_banner_shown.get(qtype, False))
 
-            if st.button("🧹 여기서 바로 초기화(원클릭)", use_container_width=True, key="btn_inline_reset_mastered"):
-                ensure_mastered_words_shape()
-                st.session_state.mastered_words[qtype] = set()
-                clear_question_widget_keys()
-                new_quiz = _safe_build_quiz_after_reset(qtype)
-                start_quiz_state(new_quiz, qtype, clear_wrongs=True)
-                st.rerun()
+            if not already:
+                st.session_state.mastery_banner_shown[qtype] = True
 
-            if st.button("❌ 오답만 다시 풀기", use_container_width=True, key="btn_inline_retry_wrongs"):
-                if not st.session_state.get("wrong_list"):
-                    st.warning("현재 오답 노트가 비어 있어요. 🙂")
-                else:
+                st.success("완벽합니다. 드디어 모두 정복했어요 ✅")
+                st.info("복습/재도전을 원하시면 아래 버튼으로 **현재 유형만** 바로 재시작 할 수 있어요.")
+
+                if st.button("🧹 여기서 바로 초기화(원클릭)", use_container_width=True, key=f"btn_inline_reset_mastered_{qtype}"):
+                    ensure_mastered_words_shape()
+                    st.session_state.mastered_words[qtype] = set()
+
+                    # ✅ 초기화했으면 '완벽 메시지' 다시 나올 수 있게 플래그도 리셋
+                    st.session_state.mastery_banner_shown[qtype] = False
+  
                     clear_question_widget_keys()
-                    retry_quiz = build_quiz_from_wrongs(st.session_state.wrong_list, qtype)
-                    start_quiz_state(retry_quiz, qtype, clear_wrongs=True)
+                    new_quiz = _safe_build_quiz_after_reset(qtype)
+                    start_quiz_state(new_quiz, qtype, clear_wrongs=True)
                     st.rerun()
 
+                if st.button("❌ 오답만 다시 풀기", use_container_width=True, key=f"btn_inline_retry_wrongs_{qtype}"):
+                    if not st.session_state.get("wrong_list"):
+                        st.warning("현재 오답 노트가 비어 있어요. 🙂")
+                    else:
+                        clear_question_widget_keys()
+                        retry_quiz = build_quiz_from_wrongs(st.session_state.wrong_list, qtype)
+                        start_quiz_state(retry_quiz, qtype, clear_wrongs=True)
+                        st.rerun()
+
+                st.stop()
+
+            # ✅ 이미 한 번 보여줬으면: 조용히 멈추거나(추천), 간단한 안내만
+            st.caption("✅ 이미 이 유형은 모두 정복했습니다.")
             st.stop()
+
+        st.info(f"남은 문제가 {len(base_pool)}개라서, 남은 만큼만 출제합니다 🙂")
+        take_n = min(N, len(base_pool))
+        sampled = base_pool.sample(n=take_n).reset_index(drop=True)
+    else:
+        sampled = base_pool.sample(n=N).reset_index(drop=True)
+
 
         st.info(f"남은 문제가 {len(base_pool)}개라서, 남은 만큼만 출제합니다 🙂")
         take_n = min(N, len(base_pool))
@@ -1622,6 +1662,7 @@ if "session_stats_applied_this_attempt" not in st.session_state:
     st.session_state.session_stats_applied_this_attempt = False
 
 ensure_mastered_words_shape()
+ensure_mastery_banner_shape() 
 
 if "history" not in st.session_state:
     st.session_state.history = []
@@ -1634,6 +1675,15 @@ if "total_counter" not in st.session_state:
 
 if "quiz" not in st.session_state:
     st.session_state.quiz = build_quiz(st.session_state.quiz_type)
+
+def ensure_mastery_banner_shape():
+    if "mastery_banner_shown" not in st.session_state or not isinstance(st.session_state.mastery_banner_shown, dict):
+        st.session_state.mastery_banner_shown = {}
+
+    # 현재 사용 가능한 유형들 기준으로 키 보장
+    types = QUIZ_TYPES_ADMIN if is_admin() else QUIZ_TYPES_USER
+    for t in types:
+        st.session_state.mastery_banner_shown.setdefault(t, False)
 
 # ============================================================
 # ✅ 상단 UI (출제유형/새문제/초기화)
@@ -1675,6 +1725,9 @@ with cbtn2:
     if st.button("✅ 맞힌 단어 제외 초기화", use_container_width=True, key="btn_reset_mastered_current_type"):
         ensure_mastered_words_shape()
         st.session_state.mastered_words[st.session_state.quiz_type] = set()
+
+        ensure_mastery_banner_shape()
+        st.session_state.mastery_banner_shown[st.session_state.quiz_type] = False
 
         clear_question_widget_keys()
         new_quiz = _safe_build_quiz_after_reset(st.session_state.quiz_type)
