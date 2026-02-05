@@ -547,9 +547,11 @@ def run_db(callable_fn):
 
 def to_kst_naive(x):
     ts = pd.to_datetime(x, utc=True, errors="coerce")
-    if hasattr(ts, "dt"):
+    if isinstance(ts, pd.Series):
         return ts.dt.tz_convert(KST_TZ).dt.tz_localize(None)
-    return ts.tz_convert(KST_TZ).tz_localize(None) if ts is not pd.NaT else ts
+    if pd.isna(ts):
+        return ts
+    return ts.tz_convert(KST_TZ).tz_localize(None)
 
 # ============================================================
 # ✅ DB 함수
