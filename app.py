@@ -401,7 +401,7 @@ def mark_progress_dirty():
     # ✅ 너무 자주 저장하지 않게 1.0초 쿨다운(원하면 0.3~2초로 조절)
     now = time.time()
     last = st.session_state.get("_last_progress_save_ts", 0.0)
-    if now - last < 1.0:
+    if now - last < 7.0:
         return
 
     try:
@@ -461,6 +461,7 @@ def clear_auth_everywhere():
         "mastered_words",
         "progress_restored",
         "pool_ready",   # ✅ 추가
+        "_sb_authed", "_sb_authed_token",
     ]:
         st.session_state.pop(k, None)
 
@@ -521,6 +522,7 @@ def refresh_session_from_cookie_if_needed(force: bool = False) -> bool:
     return False
 
 def get_authed_sb():
+    # ✅ 토큰이 없으면 쿠키 기반 복원 시도
     if not st.session_state.get("access_token"):
         refresh_session_from_cookie_if_needed(force=True)
 
@@ -528,8 +530,18 @@ def get_authed_sb():
     if not token:
         return None
 
+    # ✅ 같은 토큰이면, 매 rerun마다 create_client 하지 말고 캐시 재사용
+    cached = st.session_state.get("_sb_authed")
+    cached_token = st.session_state.get("_sb_authed_token")
+
+    if cached is not None and cached_token == token:
+        return cached
+
     sb2 = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
     sb2.postgrest.auth(token)
+
+    st.session_state["_sb_authed"] = sb2
+    st.session_state["_sb_authed_token"] = token
     return sb2
 
 def run_db(callable_fn):
@@ -980,7 +992,6 @@ if not ok and (cookies.get("refresh_token") or cookies.get("access_token")):
     st.caption("세션 복원에 실패해서 로그인을 다시 요청합니다.")
 
 require_login()
-st.session_state.pop("is_admin_cached", None)
 
 user = st.session_state.user
 user_id = user.id
