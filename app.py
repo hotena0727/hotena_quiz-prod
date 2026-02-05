@@ -401,7 +401,7 @@ def mark_progress_dirty():
     # ✅ 너무 자주 저장하지 않게 1.0초 쿨다운(원하면 0.3~2초로 조절)
     now = time.time()
     last = st.session_state.get("_last_progress_save_ts", 0.0)
-    if now - last < 7.0:
+    if now - last < 10.0:
         return
 
     try:
